@@ -1,0 +1,216 @@
+╔════════════════════════════════════════════════════════════════════════════╗
+║                                                                            ║
+║              Gold Trading Bot - Quick Start Guide                          ║
+║                                                                            ║
+║              بات تریدینگ طلا - راهنمای شروع سریع                          ║
+║                                                                            ║
+╚════════════════════════════════════════════════════════════════════════════╝
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚀 STEP 1: RUN THE APPLICATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Option A: Double-click the EXE (Easiest)
+   Location: dist/GoldTradingBot.exe
+   Size: 37.75 MB
+   Wait 10-15 seconds for first launch
+
+Option B: Run from Python
+   Command: python run_launcher.py
+   Requires: Python 3.8+ and dependencies installed
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 STEP 2: EXPLORE THE INTERFACE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Left Sidebar Menu:
+   📊 Dashboard      → Real-time trading view
+   📈 Backtesting    → Test strategies on historical data
+   🧪 Tests          → Run unit and property-based tests
+   ⚙️  Settings       → Configure trading parameters
+   📚 Documentation  → View guides and help
+   🔧 Tools          → Utility functions
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚙️  STEP 3: CONFIGURE SETTINGS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Settings" in the left menu
+2. Configure these parameters:
+   
+   Risk Management:
+   - Max Drawdown: 20% (maximum loss allowed)
+   - Risk per Trade: 2% (risk per trade)
+   
+   Strategy:
+   - Confirmation Threshold: 0.6 (signal strength)
+   - Timeframe: 5m (5-minute candles)
+
+3. Click "Save Settings"
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 STEP 4: RUN BACKTESTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Backtesting" in the left menu
+2. Set parameters:
+   - Start Date: 2024-01-01
+   - End Date: 2024-12-31
+   - Initial Capital: 10000 (USD)
+3. Click "Run Backtest"
+4. Wait for results (usually 1-5 minutes)
+5. Review results:
+   - Total Return: % profit
+   - Sharpe Ratio: risk-adjusted return
+   - Max Drawdown: largest loss
+   - Win Rate: % winning trades
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🧪 STEP 5: RUN TESTS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Tests" in the left menu
+2. Select test type:
+   - All Tests (recommended for first run)
+   - Unit Tests
+   - Property-Based Tests
+3. Click "Run Tests"
+4. Wait for completion
+5. Check results:
+   - ✓ = Test passed
+   - ✗ = Test failed
+   - Coverage = % of code tested
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📊 STEP 6: MONITOR DASHBOARD
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Dashboard" in the left menu
+2. View real-time information:
+   - Current Price: XAUUSD price
+   - Trading Signals: Buy/Sell signals
+   - Open Positions: Active trades
+   - P&L: Profit/Loss
+   - Trade History: Past trades
+
+3. Monitor continuously during trading hours
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🔧 STEP 7: USE TOOLS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Click "Tools" in the left menu
+2. Available tools:
+   
+   Train ML Model
+   - Improves price predictions
+   - Takes 5-10 minutes
+   
+   Export Trade History
+   - Save trades to CSV
+   - For analysis in Excel
+   
+   Database Backup
+   - Backup all data
+   - For recovery if needed
+   
+   Clear Cache
+   - Improves performance
+   - Safe to run anytime
+   
+   Generate Report
+   - Performance analysis
+   - PDF or Excel format
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+⚠️  IMPORTANT NOTES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+✓ Always backtest before live trading
+✓ Start with small capital
+✓ Never risk more than 2-3% per trade
+✓ Monitor the dashboard regularly
+✓ Keep backups of your data
+✓ Review logs for errors
+
+✗ Don't trade without backtesting
+✗ Don't risk all your capital
+✗ Don't ignore risk management
+✗ Don't trade during low liquidity
+✗ Don't modify code without testing
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📁 FILE LOCATIONS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+EXE:                dist/GoldTradingBot.exe
+Configuration:     config.json
+Language Settings:  config/language.json
+Logs:              logs/trading_bot.json
+Database:          trading_bot/data/trading_bot.db
+Models:            trading_bot/ml/models/
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🆘 TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Problem: Application won't start
+Solution: 
+  - Ensure Windows 10 or later
+  - Check you have 4GB+ RAM
+  - Run as Administrator
+  - Check logs for errors
+
+Problem: GUI not displaying
+Solution:
+  - Update graphics drivers
+  - Reinstall PyQt5: pip install --upgrade PyQt5
+  - Try running in compatibility mode
+
+Problem: Backtesting is slow
+Solution:
+  - Use shorter date range
+  - Reduce number of indicators
+  - Close other applications
+  - Increase update interval
+
+Problem: Trading errors
+Solution:
+  - Check API credentials
+  - Verify internet connection
+  - Check logs: logs/trading_bot.json
+  - Verify market is open
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📚 DOCUMENTATION
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+README.md                    - Project overview
+USAGE_GUIDE.md              - Detailed usage guide
+DEPLOYMENT_GUIDE.md         - Production deployment
+QUICKSTART.md               - Quick start guide
+BILINGUAL_GUIDE.md          - Persian/English guide
+EXE_README.md               - EXE-specific guide
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📞 SUPPORT
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Email:  amirgh23@gmail.com
+GitHub: https://github.com/Amirgh23/gold-trading-bot
+Issues: https://github.com/Amirgh23/gold-trading-bot/issues
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+✨ READY TO START?
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+1. Double-click: dist/GoldTradingBot.exe
+2. Wait for GUI to load
+3. Follow the steps above
+4. Start trading!
+
+Good luck! 🚀
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Version: 1.0.0 | License: Proprietary | Author: Amir Ghanbari (amirgh23)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

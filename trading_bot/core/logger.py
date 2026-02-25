@@ -42,16 +42,29 @@ def setup_logger(name, log_dir='logs', level=logging.INFO):
     logger = logging.getLogger(name)
     logger.setLevel(level)
     
+    # Use absolute path in user's home directory or current directory
+    if log_dir == 'logs':
+        # Try current directory first, then user home
+        log_dir = Path.cwd() / 'logs'
+        if not log_dir.exists():
+            try:
+                log_dir.mkdir(parents=True, exist_ok=True)
+            except PermissionError:
+                # Fallback to user home directory
+                log_dir = Path.home() / '.trading_bot' / 'logs'
+                log_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        log_dir = Path(log_dir)
+    
     # Create logs directory if it doesn't exist
-    Path(log_dir).mkdir(parents=True, exist_ok=True)
+    log_dir.mkdir(parents=True, exist_ok=True)
     
     # Remove existing handlers to avoid duplicates
     logger.handlers.clear()
     
     # JSON file handler
-    json_handler = logging.FileHandler(
-        os.path.join(log_dir, f'{name.replace(".", "_")}.json')
-    )
+    log_file = log_dir / f'{name.replace(".", "_")}.json'
+    json_handler = logging.FileHandler(str(log_file))
     json_handler.setFormatter(JSONFormatter())
     logger.addHandler(json_handler)
     
