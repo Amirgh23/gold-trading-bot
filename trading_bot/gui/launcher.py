@@ -14,10 +14,10 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 try:
-    from trading_bot.gui.advanced_dashboard import AdvancedDashboard
+    from trading_bot.gui.professional_dashboard import ProfessionalDashboard
 except Exception as e:
-    print(f"Warning: Could not import AdvancedDashboard: {e}")
-    AdvancedDashboard = None
+    print(f"Warning: Could not import ProfessionalDashboard: {e}")
+    ProfessionalDashboard = None
 
 try:
     from trading_bot.core.config import ConfigManager
@@ -99,10 +99,10 @@ class LauncherWindow(QMainWindow):
     
     def setup_pages(self):
         """Setup all pages in stacked widget"""
-        # Page 0: Advanced Dashboard with Charts
-        if AdvancedDashboard:
+        # Page 0: Professional Dashboard with Charts, Indicators, AI Analysis
+        if ProfessionalDashboard:
             try:
-                dashboard = AdvancedDashboard()
+                dashboard = ProfessionalDashboard()
                 self.stacked_widget.addWidget(dashboard)
             except Exception as e:
                 error_widget = QWidget()
