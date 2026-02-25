@@ -1,0 +1,4 @@
+# file: C:\Users\Amirgh23\AppData\Roaming\Python\Python313\site-packages\pandas\_testing\_io.py
+# hypothesis_version: 6.151.9
+
+['addfile', 'bz2', 'gzip', 'tar', 'test', 'w', 'wb', 'write', 'writestr', 'xz', 'zip', 'zstandard', 'zstd']

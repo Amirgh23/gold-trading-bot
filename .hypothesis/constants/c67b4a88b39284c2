@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\execution\position_manager.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.5, 3.75, 100, 'BUY', 'DOWNTREND', 'LONG', 'SHORT', 'STOP_LOSS', 'TAKE_PROFIT', 'TIME_LIMIT', 'TRAILING_STOP', 'TREND_REVERSAL', 'UNKNOWN', 'UPTREND', 'XAUUSD']

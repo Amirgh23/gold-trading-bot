@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\models\position.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 'LONG', 'OPEN', 'current_price', 'current_size', 'entry_price', 'entry_reason', 'entry_size', 'entry_time', 'id', 'side', 'status', 'stop_loss', 'strategy', 'symbol', 'take_profit', 'trailing_stop', 'unrealized_pnl']

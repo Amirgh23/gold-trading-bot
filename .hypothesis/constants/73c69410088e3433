@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\strategies\base.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, 'accuracy', 'losing_signals', 'total_signals', 'win_rate', 'winning_signals']

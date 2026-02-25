@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\models\metrics.py
+# hypothesis_version: 6.151.9
+
+[0.0, 'cumulative_pnl', 'daily_pnl', 'date', 'losing_trades', 'max_drawdown', 'profit_factor', 'recovery_factor', 'sharpe_ratio', 'strategy_performance', 'total_trades', 'win_rate', 'winning_trades']

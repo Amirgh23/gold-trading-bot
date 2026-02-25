@@ -1,0 +1,4 @@
+# file: C:\Users\Amirgh23\AppData\Roaming\Python\Python313\site-packages\pandas\core\arrays\_arrow_string_mixins.py
+# hypothesis_version: 6.151.9
+
+['$', '\\$', '\\g<', '^', 'both', 'contains', 'endswith', 'left', 'right', 'startswith']

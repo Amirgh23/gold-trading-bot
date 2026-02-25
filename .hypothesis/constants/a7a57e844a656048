@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\risk\manager.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.1, 0.25, 0.5, 0.55, 0.7, 0.8, 0.9, 1.0, 1.05, 1.1, 1.5, 2.0, 5.0, 20.0, 100, 'Daily metrics reset']

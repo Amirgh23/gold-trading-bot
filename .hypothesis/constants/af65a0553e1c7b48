@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\strategies\ensemble.py
+# hypothesis_version: 6.151.9
+
+[0.0, 1.0, 1.1, 2.0, 100, 'BUY', 'ENSEMBLE', 'HOLD', 'SELL', 'WEAK_', 'XAUUSD', 'avg_confidence', 'buy_signals', 'has_conflict', 'sell_signals', 'total_signals']

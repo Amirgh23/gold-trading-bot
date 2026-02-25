@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\models\trade.py
+# hypothesis_version: 6.151.9
+
+[0.0, 100, '2m', 'duration_seconds', 'entry_price', 'entry_reason', 'entry_size', 'entry_time', 'exit_price', 'exit_reason', 'exit_size', 'exit_time', 'id', 'max_loss', 'max_profit', 'pnl', 'pnl_percent', 'stop_loss', 'strategy', 'symbol', 'take_profit', 'timeframe']

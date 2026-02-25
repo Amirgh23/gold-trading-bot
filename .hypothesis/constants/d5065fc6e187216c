@@ -1,0 +1,4 @@
+# file: C:\Users\Amirgh23\AppData\Roaming\Python\Python313\site-packages\pandas\core\dtypes\concat.py
+# hypothesis_version: 6.151.9
+
+['Sequence[np.ndarray]', 'b', 'f', 'i', 'iuf', 'o', 'pandas.api.types', 'u']

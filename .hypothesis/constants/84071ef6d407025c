@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\core\config.py
+# hypothesis_version: 6.151.9
+
+[0.1, 0.25, 0.5, 1.0, 2.0, 3.0, 5.0, 10.0, 20.0, 30.0, '2m', 'TRADING_BOT_API_KEY', 'TRADING_BOT_EXCHANGE', 'TRADING_BOT_SYMBOL', 'XAUUSD', 'aggressive', 'balanced', 'binance', 'config.json', 'conservative', 'exchange', 'kelly_fraction', 'max_drawdown_percent', 'r', 'risk', 'strategy', 'w']

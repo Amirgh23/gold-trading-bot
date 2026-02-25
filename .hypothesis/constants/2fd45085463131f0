@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\models\signal.py
+# hypothesis_version: 6.151.9
+
+[0.0, 'confidence', 'direction', 'entry_price', 'id', 'indicators', 'reason', 'stop_loss', 'strategy', 'symbol', 'take_profit', 'timestamp']

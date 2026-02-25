@@ -1,0 +1,4 @@
+# file: C:\Users\Amirgh23\AppData\Roaming\Python\Python313\site-packages\pandas\core\window\expanding.py
+# hypothesis_version: 6.151.9
+
+['average', 'cython', 'linear', 'method', 'min_periods', 'numba', 'pandas.api.typing', 'single']
