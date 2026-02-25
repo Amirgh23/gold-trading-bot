@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\indicators\engine.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.015, 0.1, 100, 200, 'DOWNTREND', 'SIDEWAYS', 'UNKNOWN', 'UPTREND', 'adx', 'atr', 'bb_lower', 'bb_middle', 'bb_upper', 'bearish', 'bullish', 'cci', 'close', 'ema_13', 'ema_200', 'ema_5', 'ema_50', 'high', 'low', 'macd', 'macd_hist', 'macd_signal', 'obv', 'resistance', 'rsi', 'std_dev', 'stochastic', 'support', 'volume', 'vpt']

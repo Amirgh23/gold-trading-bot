@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 """
 Build EXE for Gold Trading Bot using PyInstaller
 """
@@ -7,6 +8,7 @@ import os
 import sys
 import shutil
 from pathlib import Path
+import PyInstaller.__main__
 
 def build_exe():
     """Build standalone EXE"""
@@ -18,19 +20,17 @@ def build_exe():
     # Clean previous builds
     if os.path.exists("dist"):
         shutil.rmtree("dist")
-        print("✓ Cleaned previous dist folder")
+        print("[OK] Cleaned previous dist folder")
     
     if os.path.exists("build"):
         shutil.rmtree("build")
-        print("✓ Cleaned previous build folder")
+        print("[OK] Cleaned previous build folder")
     
     # PyInstaller command
-    cmd = [
-        "pyinstaller",
+    args = [
         "--onefile",  # Single EXE file
         "--windowed",  # No console window
         "--name=GoldTradingBot",  # EXE name
-        "--icon=trading_bot/gui/icon.ico" if os.path.exists("trading_bot/gui/icon.ico") else "",
         "--add-data=config:config",  # Include config folder
         "--add-data=trading_bot/i18n:trading_bot/i18n",  # Include translations
         "--hidden-import=PyQt5",
@@ -43,26 +43,27 @@ def build_exe():
         "run_launcher.py"
     ]
     
-    # Remove empty strings
-    cmd = [c for c in cmd if c]
-    
     print("\nRunning PyInstaller...")
-    print(f"Command: {' '.join(cmd)}\n")
+    print(f"Arguments: {' '.join(args)}\n")
     
-    os.system(" ".join(cmd))
+    try:
+        PyInstaller.__main__.run(args)
+    except Exception as e:
+        print(f"[ERROR] PyInstaller error: {e}")
+        return False
     
     # Check if build was successful
     exe_path = Path("dist/GoldTradingBot.exe")
     if exe_path.exists():
         print("\n" + "=" * 60)
-        print("✓ EXE BUILD SUCCESSFUL!")
+        print("[OK] EXE BUILD SUCCESSFUL!")
         print("=" * 60)
         print(f"\nEXE Location: {exe_path.absolute()}")
         print(f"File Size: {exe_path.stat().st_size / (1024*1024):.2f} MB")
         print("\nYou can now run: dist/GoldTradingBot.exe")
         return True
     else:
-        print("\n✗ EXE build failed!")
+        print("\n[ERROR] EXE build failed!")
         return False
 
 if __name__ == "__main__":

@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\execution\order_executor.py
+# hypothesis_version: 6.151.9
+
+[0.0, 0.2, 0.5, 100, 'ACTIVE', 'BUY', 'CANCELLED', 'FAILED', 'FILLED', 'HEALTHY', 'INACTIVE', 'Invalid order size', 'MARKET', 'PARTIAL', 'PENDING', 'UNHEALTHY', 'UNKNOWN', 'XAUUSD', 'ask', 'average', 'average_price', 'backup', 'bid', 'closed', 'filled', 'filled_size', 'id', 'order_type', 'price', 'primary', 'side', 'size', 'status', 'symbol', 'timestamp', 'unknown']

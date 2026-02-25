@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\market\provider.py
+# hypothesis_version: 6.151.9
+
+[100, 30000, '2m', 'XAUUSD', 'ask', 'bid', 'binance', 'close', 'enableRateLimit', 'high', 'last', 'low', 'ms', 'open', 'timeout', 'timestamp', 'volume']

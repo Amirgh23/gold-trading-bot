@@ -1,0 +1,4 @@
+# file: D:\desktop\New folder\trading_bot\core\database.py
+# hypothesis_version: 6.151.9
+
+[1000, ' AND entry_time <= ?', ' AND entry_time >= ?', 'OPEN', 'XAUUSD', 'confidence', 'cumulative_pnl', 'current_price', 'current_size', 'daily_pnl', 'date', 'direction', 'duration_seconds', 'entry_price', 'entry_reason', 'entry_size', 'entry_time', 'exit_price', 'exit_reason', 'exit_size', 'exit_time', 'id', 'indicators', 'losing_trades', 'max_drawdown', 'max_loss', 'max_profit', 'performance_metrics', 'pnl', 'pnl_percent', 'positions', 'profit_factor', 'reason', 'recovery_factor', 'sharpe_ratio', 'side', 'signals', 'status', 'stop_loss', 'strategy', 'strategy_performance', 'symbol', 'take_profit', 'timeframe', 'timestamp', 'total_trades', 'trades', 'trading_bot.db', 'trailing_stop', 'unrealized_pnl', 'win_rate', 'winning_trades']
