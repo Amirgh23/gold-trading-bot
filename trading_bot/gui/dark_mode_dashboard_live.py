@@ -1,7 +1,6 @@
 """
-Dark Mode Professional Trading Dashboard
-Full screen main chart with all indicators and AI analysis
-LIVE DATA ENABLED - Real-time updates
+Dark Mode Professional Trading Dashboard - LIVE DATA VERSION
+Full screen main chart with real-time updates
 """
 
 import sys
@@ -20,179 +19,8 @@ from PyQt5.QtCore import QDateTime, QPointF
 from trading_bot.gui.live_data_manager import LiveDataUpdater, LiveAnalysisUpdater
 
 
-class AIAnalysisThread(QThread):
-    """Background thread for AI analysis"""
-    analysis_ready = pyqtSignal(dict)
-    
-    def __init__(self, data):
-        super().__init__()
-        self.data = data
-    
-    def run(self):
-        """Run AI analysis"""
-        analysis = self.analyze_with_ai()
-        self.analysis_ready.emit(analysis)
-    
-    def analyze_with_ai(self):
-        """Perform comprehensive AI analysis"""
-        prices = self.data['close'].values
-        
-        # Trend analysis
-        ma20 = np.mean(prices[-20:]) if len(prices) >= 20 else np.mean(prices)
-        ma50 = np.mean(prices[-50:]) if len(prices) >= 50 else np.mean(prices)
-        ma200 = np.mean(prices[-200:]) if len(prices) >= 200 else np.mean(prices)
-        current_price = prices[-1]
-        
-        trend = "UPTREND" if ma20 > ma50 > ma200 else "DOWNTREND" if ma20 < ma50 < ma200 else "SIDEWAYS"
-        trend_strength = abs(ma20 - ma50) / ma50 * 100
-        
-        # RSI Analysis
-        rsi = self.calculate_rsi(prices)
-        rsi_signal = "OVERBOUGHT" if rsi > 70 else "OVERSOLD" if rsi < 30 else "NEUTRAL"
-        
-        # MACD Analysis
-        ema12 = self.calculate_ema(prices, 12)
-        ema26 = self.calculate_ema(prices, 26)
-        macd = ema12 - ema26
-        macd_signal = "BULLISH" if macd > 0 else "BEARISH"
-        
-        # Stochastic Analysis
-        stoch = self.calculate_stochastic(prices)
-        stoch_signal = "OVERBOUGHT" if stoch > 80 else "OVERSOLD" if stoch < 20 else "NEUTRAL"
-        
-        # Bollinger Bands
-        bb_middle = np.mean(prices[-20:])
-        bb_std = np.std(prices[-20:])
-        bb_upper = bb_middle + (bb_std * 2)
-        bb_lower = bb_middle - (bb_std * 2)
-        
-        if current_price > bb_upper:
-            bb_signal = "OVERBOUGHT"
-        elif current_price < bb_lower:
-            bb_signal = "OVERSOLD"
-        else:
-            bb_signal = "NEUTRAL"
-        
-        # ATR (Average True Range)
-        atr = self.calculate_atr(self.data)
-        volatility = "HIGH" if atr > np.mean(prices) * 0.02 else "LOW"
-        
-        # AI Recommendation
-        signals = [
-            ("BULL" if "UP" in trend else "BEAR"),
-            ("BULL" if "OVERBOUGHT" not in rsi_signal else "BEAR"),
-            ("BULL" if "BULLISH" in macd_signal else "BEAR"),
-            ("BULL" if "OVERBOUGHT" not in stoch_signal else "BEAR"),
-            ("BULL" if "OVERBOUGHT" not in bb_signal else "BEAR"),
-        ]
-        
-        bullish_count = sum(1 for s in signals if "BULL" in s)
-        bearish_count = len(signals) - bullish_count
-        
-        if bullish_count > bearish_count:
-            recommendation = "BUY"
-            confidence = (bullish_count / len(signals)) * 100
-        elif bearish_count > bullish_count:
-            recommendation = "SELL"
-            confidence = (bearish_count / len(signals)) * 100
-        else:
-            recommendation = "HOLD"
-            confidence = 50
-        
-        return {
-            'trend': trend,
-            'trend_strength': trend_strength,
-            'rsi': rsi,
-            'rsi_signal': rsi_signal,
-            'macd': macd,
-            'macd_signal': macd_signal,
-            'stoch': stoch,
-            'stoch_signal': stoch_signal,
-            'bb_signal': bb_signal,
-            'volatility': volatility,
-            'atr': atr,
-            'recommendation': recommendation,
-            'confidence': confidence,
-            'current_price': current_price,
-            'ma20': ma20,
-            'ma50': ma50,
-            'ma200': ma200,
-            'bb_upper': bb_upper,
-            'bb_lower': bb_lower,
-            'bb_middle': bb_middle
-        }
-    
-    @staticmethod
-    def calculate_rsi(prices, period=14):
-        """Calculate RSI"""
-        if len(prices) < period:
-            return 50
-        
-        delta = np.diff(prices[-period-1:])
-        gain = np.where(delta > 0, delta, 0)
-        loss = np.where(delta < 0, -delta, 0)
-        
-        avg_gain = np.mean(gain)
-        avg_loss = np.mean(loss)
-        
-        if avg_loss == 0:
-            return 100 if avg_gain > 0 else 50
-        
-        rs = avg_gain / avg_loss
-        rsi = 100 - (100 / (1 + rs))
-        return rsi
-    
-    @staticmethod
-    def calculate_ema(prices, period):
-        """Calculate EMA"""
-        multiplier = 2 / (period + 1)
-        ema = np.mean(prices[:period])
-        
-        for price in prices[period:]:
-            ema = price * multiplier + ema * (1 - multiplier)
-        
-        return ema
-    
-    @staticmethod
-    def calculate_stochastic(prices, period=14):
-        """Calculate Stochastic"""
-        if len(prices) < period:
-            return 50
-        
-        low = np.min(prices[-period:])
-        high = np.max(prices[-period:])
-        close = prices[-1]
-        
-        if high == low:
-            return 50
-        
-        stoch = ((close - low) / (high - low)) * 100
-        return stoch
-    
-    @staticmethod
-    def calculate_atr(data, period=14):
-        """Calculate ATR"""
-        if len(data) < period:
-            return 0
-        
-        high = data['high'].values[-period:]
-        low = data['low'].values[-period:]
-        close = data['close'].values[-period:]
-        
-        tr = np.maximum(
-            high - low,
-            np.maximum(
-                np.abs(high - np.roll(close, 1)),
-                np.abs(low - np.roll(close, 1))
-            )
-        )
-        
-        atr = np.mean(tr)
-        return atr
-
-
-class DarkModeDashboard(QWidget):
-    """Dark mode dashboard with full screen main chart and LIVE DATA"""
+class DarkModeDashboardLive(QWidget):
+    """Dark mode dashboard with LIVE DATA - Real-time updates"""
     
     def __init__(self):
         super().__init__()
@@ -200,6 +28,7 @@ class DarkModeDashboard(QWidget):
         self.analysis = None
         self.chart_view = None
         self.chart = None
+        self.table = None
         
         # Live data managers
         self.data_updater = LiveDataUpdater(self.data)
@@ -218,6 +47,125 @@ class DarkModeDashboard(QWidget):
         # Start threads
         self.data_updater.start()
         self.analysis_updater.start()
+        
+    def on_data_updated(self, data):
+        """Handle live data update"""
+        self.data = data
+        self.refresh_chart()
+    
+    def on_analysis_updated(self, analysis):
+        """Handle live analysis update"""
+        self.analysis = analysis
+        self.update_metrics(analysis)
+        self.update_analysis_table(analysis)
+    
+    def refresh_chart(self):
+        """Refresh chart with new data"""
+        if self.chart is None or self.chart_view is None:
+            return
+        
+        try:
+            # Clear old series
+            self.chart.removeAllSeries()
+            
+            # Create candlestick series
+            series = QCandlestickSeries()
+            series.setName("XAUUSD")
+            
+            # Add candlesticks
+            for idx, row in self.data.tail(100).iterrows():
+                candlestick = QCandlestickSet(
+                    row['open'], row['high'], row['low'], row['close']
+                )
+                candlestick.setTimestamp(int(row['date'].timestamp() * 1000))
+                series.append(candlestick)
+            
+            self.chart.addSeries(series)
+            
+            # Add MAs
+            ma20_series = QLineSeries()
+            ma20_series.setName("MA20")
+            for idx, row in self.data.tail(100).iterrows():
+                if pd.notna(row.get('MA20')):
+                    ma20_series.append(int(row['date'].timestamp() * 1000), row['MA20'])
+            self.chart.addSeries(ma20_series)
+            
+            ma50_series = QLineSeries()
+            ma50_series.setName("MA50")
+            for idx, row in self.data.tail(100).iterrows():
+                if pd.notna(row.get('MA50')):
+                    ma50_series.append(int(row['date'].timestamp() * 1000), row['MA50'])
+            self.chart.addSeries(ma50_series)
+            
+            ma200_series = QLineSeries()
+            ma200_series.setName("MA200")
+            for idx, row in self.data.tail(100).iterrows():
+                if pd.notna(row.get('MA200')):
+                    ma200_series.append(int(row['date'].timestamp() * 1000), row['MA200'])
+            self.chart.addSeries(ma200_series)
+        except Exception as e:
+            print(f"Error refreshing chart: {e}")
+    
+    def update_metrics(self, analysis):
+        """Update top metrics"""
+        if analysis:
+            price = analysis.get('current_price', 0)
+            confidence = analysis.get('confidence', 0)
+            volatility = analysis.get('volatility', 'MEDIUM')
+            
+            # Update confidence
+            self.confidence_widget.findChild(QLabel).setText(f"{confidence:.0f}%")
+            
+            # Update volatility
+            vol_color = "#ff0000" if volatility == "HIGH" else "#00ff00"
+            self.volatility_widget.setStyleSheet(f"""
+                QFrame {{
+                    background-color: #1a1a1a;
+                    border: 1px solid {vol_color};
+                    border-radius: 3px;
+                    padding: 3px;
+                }}
+            """)
+    
+    def update_analysis_table(self, analysis):
+        """Update analysis table with live data"""
+        if not analysis or self.table is None:
+            return
+        
+        try:
+            indicators = [
+                ("Trend", analysis.get('trend', 'N/A'), "BULLISH" if "UP" in analysis.get('trend', '') else "BEARISH"),
+                ("RSI (14)", f"{analysis.get('rsi', 0):.1f}", analysis.get('rsi_signal', 'N/A')),
+                ("MACD", f"{analysis.get('macd', 0):.4f}", analysis.get('macd_signal', 'N/A')),
+                ("Stochastic", f"{analysis.get('stoch', 0):.1f}", analysis.get('stoch_signal', 'N/A')),
+                ("Bollinger Bands", "MIDDLE", analysis.get('bb_signal', 'N/A')),
+                ("MA20", f"{analysis.get('ma20', 0):.2f}", "ABOVE" if analysis.get('current_price', 0) > analysis.get('ma20', 0) else "BELOW"),
+                ("MA50", f"{analysis.get('ma50', 0):.2f}", "ABOVE" if analysis.get('current_price', 0) > analysis.get('ma50', 0) else "BELOW"),
+                ("Volatility", analysis.get('volatility', 'N/A'), "NORMAL"),
+                ("AI Recommendation", analysis.get('recommendation', 'HOLD'), "STRONG"),
+                ("Confidence Level", f"{analysis.get('confidence', 0):.0f}%", "HIGH"),
+            ]
+            
+            for i, (indicator, value, signal) in enumerate(indicators):
+                if i < self.table.rowCount():
+                    self.table.setItem(i, 0, QTableWidgetItem(indicator))
+                    self.table.setItem(i, 1, QTableWidgetItem(str(value)))
+                    
+                    signal_item = QTableWidgetItem(signal)
+                    
+                    if "BULL" in signal or "BUY" in signal or "ABOVE" in signal:
+                        signal_item.setBackground(QBrush(QColor("#1a3a1a")))
+                        signal_item.setForeground(QBrush(QColor("#00ff00")))
+                    elif "BEAR" in signal or "SELL" in signal or "BELOW" in signal:
+                        signal_item.setBackground(QBrush(QColor("#3a1a1a")))
+                        signal_item.setForeground(QBrush(QColor("#ff0000")))
+                    elif "OVERBOUGHT" in signal:
+                        signal_item.setBackground(QBrush(QColor("#3a3a1a")))
+                        signal_item.setForeground(QBrush(QColor("#ffff00")))
+                    
+                    self.table.setItem(i, 2, signal_item)
+        except Exception as e:
+            print(f"Error updating table: {e}")
         
     def init_ui(self):
         """Initialize UI"""
@@ -248,6 +196,10 @@ class DarkModeDashboard(QWidget):
         # Volatility
         self.volatility_widget = self.create_metric_widget("Volatility", "MEDIUM", "#ff8800")
         top_layout.addWidget(self.volatility_widget)
+        
+        # Live indicator
+        live_widget = self.create_metric_widget("Status", "🔴 LIVE", "#ff0000")
+        top_layout.addWidget(live_widget)
         
         main_layout.addLayout(top_layout, 0)
         
@@ -369,12 +321,12 @@ class DarkModeDashboard(QWidget):
     
     def create_ai_analysis_table(self):
         """Create AI analysis table"""
-        table = QTableWidget()
-        table.setColumnCount(3)
-        table.setHorizontalHeaderLabels(["Indicator", "Value", "Signal"])
-        table.setRowCount(10)
-        table.setMaximumHeight(120)
-        table.setStyleSheet("""
+        self.table = QTableWidget()
+        self.table.setColumnCount(3)
+        self.table.setHorizontalHeaderLabels(["Indicator", "Value", "Signal"])
+        self.table.setRowCount(10)
+        self.table.setMaximumHeight(120)
+        self.table.setStyleSheet("""
             QTableWidget {
                 background-color: #1a1a1a;
                 color: #00ff00;
@@ -406,8 +358,8 @@ class DarkModeDashboard(QWidget):
         ]
         
         for i, (indicator, value, signal) in enumerate(indicators):
-            table.setItem(i, 0, QTableWidgetItem(indicator))
-            table.setItem(i, 1, QTableWidgetItem(value))
+            self.table.setItem(i, 0, QTableWidgetItem(indicator))
+            self.table.setItem(i, 1, QTableWidgetItem(value))
             
             signal_item = QTableWidgetItem(signal)
             
@@ -421,9 +373,9 @@ class DarkModeDashboard(QWidget):
                 signal_item.setBackground(QBrush(QColor("#3a3a1a")))
                 signal_item.setForeground(QBrush(QColor("#ffff00")))
             
-            table.setItem(i, 2, signal_item)
+            self.table.setItem(i, 2, signal_item)
         
-        return table
+        return self.table
     
     def generate_sample_data(self):
         """Generate sample data"""
@@ -482,34 +434,9 @@ class DarkModeDashboard(QWidget):
             }
         """)
     
-    def start_ai_analysis(self):
-        """Start AI analysis in background"""
-        self.analysis_thread = AIAnalysisThread(self.data)
-        self.analysis_thread.analysis_ready.connect(self.update_analysis)
-        self.analysis_thread.start()
-    
-    def update_analysis(self, analysis):
-        """Update UI with analysis results"""
-        self.analysis = analysis
-        
-        # Update signal widget
-        recommendation = analysis['recommendation']
-        confidence = analysis['confidence']
-        
-        color = "#00ff00" if recommendation == "BUY" else "#ff0000" if recommendation == "SELL" else "#ffff00"
-        
-        # Update confidence widget
-        self.confidence_widget.findChild(QLabel).setText(f"{confidence:.0f}%")
-        
-        # Update volatility widget
-        volatility = analysis['volatility']
-        vol_color = "#ff0000" if volatility == "HIGH" else "#00ff00"
-        self.volatility_widget.setStyleSheet(f"""
-            QFrame {{
-                background-color: #1a1a1a;
-                border: 1px solid {vol_color};
-                border-radius: 3px;
-                padding: 3px;
-            }}
-        """)
+    def closeEvent(self, event):
+        """Clean up when closing"""
+        self.data_updater.stop()
+        self.analysis_updater.stop()
+        event.accept()
 

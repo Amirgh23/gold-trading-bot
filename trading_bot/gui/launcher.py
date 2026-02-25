@@ -14,6 +14,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 try:
+    from trading_bot.gui.dark_mode_dashboard_live import DarkModeDashboardLive
+except Exception as e:
+    print(f"Warning: Could not import DarkModeDashboardLive: {e}")
+    DarkModeDashboardLive = None
+
+try:
     from trading_bot.gui.dark_mode_dashboard import DarkModeDashboard
 except Exception as e:
     print(f"Warning: Could not import DarkModeDashboard: {e}")
@@ -111,8 +117,17 @@ class LauncherWindow(QMainWindow):
     
     def setup_pages(self):
         """Setup all pages in stacked widget"""
-        # Page 0: Dark Mode Dashboard with full screen main chart
-        if DarkModeDashboard:
+        # Page 0: Dark Mode Dashboard LIVE with real-time data updates
+        if DarkModeDashboardLive:
+            try:
+                dashboard = DarkModeDashboardLive()
+                self.stacked_widget.addWidget(dashboard)
+            except Exception as e:
+                error_widget = QWidget()
+                error_layout = QVBoxLayout(error_widget)
+                error_layout.addWidget(QLabel(f"Dashboard Error: {str(e)}"))
+                self.stacked_widget.addWidget(error_widget)
+        elif DarkModeDashboard:
             try:
                 dashboard = DarkModeDashboard()
                 self.stacked_widget.addWidget(dashboard)
