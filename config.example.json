@@ -1,0 +1,43 @@
+{
+  "trading": {
+    "symbol": "XAUUSD",
+    "timeframe": "2m",
+    "risk_per_trade": 1.0,
+    "max_position_size": 2.0,
+    "max_concurrent_positions": 5,
+    "daily_loss_limit": 5.0,
+    "max_drawdown_limit": 20.0
+  },
+  "exchange": {
+    "primary": "binance",
+    "backup": "kraken",
+    "api_key": "YOUR_API_KEY",
+    "api_secret": "YOUR_API_SECRET"
+  },
+  "strategies": {
+    "technical": {
+      "enabled": true,
+      "weight": 0.4
+    },
+    "lstm": {
+      "enabled": true,
+      "weight": 0.35,
+      "confidence_threshold": 40.0
+    },
+    "dqn": {
+      "enabled": true,
+      "weight": 0.25
+    }
+  },
+  "ml": {
+    "retraining_trigger": 55.0,
+    "confidence_threshold": 40.0,
+    "model_path": "models/lstm_model.h5"
+  },
+  "gui": {
+    "enabled": true,
+    "update_interval": 1000,
+    "alerts_enabled": true,
+    "notifications_enabled": true
+  }
+}
