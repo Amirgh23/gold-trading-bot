@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QScrollArea, QFrame
 )
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QColor, QBrush
+from PyQt5.QtGui import QFont, QColor, QBrush, QPainter
 from PyQt5.QtChart import QChart, QChartView, QCandlestickSeries, QCandlestickSet
 from PyQt5.QtChart import QLineSeries, QDateTimeAxis, QValueAxis, QBarSeries, QBarSet, QBarCategoryAxis
 from PyQt5.QtCore import QDateTime, QPointF
@@ -254,7 +254,7 @@ class ProfessionalDashboard(QWidget):
         ma20_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         
         return chart_view
     
@@ -287,7 +287,7 @@ class ProfessionalDashboard(QWidget):
         rsi_series.attachAxis(axis_y)
         
         rsi_view = QChartView(rsi_chart)
-        rsi_view.setRenderHint(rsi_view.Antialiasing)
+        rsi_view.setRenderHint(QPainter.Antialiasing)
         
         layout.addWidget(rsi_view)
         

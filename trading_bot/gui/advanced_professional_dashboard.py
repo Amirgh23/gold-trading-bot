@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import (
     QTableWidget, QTableWidgetItem, QScrollArea, QFrame, QGridLayout
 )
 from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QColor, QBrush
+from PyQt5.QtGui import QFont, QColor, QBrush, QPainter
 from PyQt5.QtChart import QChart, QChartView, QCandlestickSeries, QCandlestickSet
 from PyQt5.QtChart import QLineSeries, QDateTimeAxis, QValueAxis, QBarSeries, QBarSet, QBarCategoryAxis
 from PyQt5.QtCore import QDateTime, QPointF
@@ -334,7 +334,7 @@ class AdvancedProfessionalDashboard(QWidget):
         ma50_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(300)
         
         return chart_view
@@ -364,7 +364,7 @@ class AdvancedProfessionalDashboard(QWidget):
         rsi_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
         
         return chart_view
@@ -394,7 +394,7 @@ class AdvancedProfessionalDashboard(QWidget):
         stoch_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
         
         return chart_view
@@ -426,7 +426,7 @@ class AdvancedProfessionalDashboard(QWidget):
         macd_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
         
         return chart_view
@@ -459,7 +459,7 @@ class AdvancedProfessionalDashboard(QWidget):
         bb_series.attachAxis(axis_y)
         
         chart_view = QChartView(chart)
-        chart_view.setRenderHint(chart_view.Antialiasing)
+        chart_view.setRenderHint(QPainter.Antialiasing)
         chart_view.setMinimumHeight(200)
         
         return chart_view
