@@ -1,0 +1,89 @@
+PROPRIETARY LICENSE AGREEMENT
+Gold Trading Bot - Enhanced Edition
+
+Copyright © 2024 Amir Ghanbari (amirgh23). All rights reserved.
+
+TERMS AND CONDITIONS
+
+1. OWNERSHIP AND INTELLECTUAL PROPERTY
+   This software, including all source code, algorithms, models, documentation,
+   and associated materials (collectively "Software") is the exclusive property
+   of Amir Ghanbari. All intellectual property rights, including but not limited
+   to copyrights, patents, trade secrets, and trademarks are retained by the owner.
+
+2. GRANT OF LICENSE
+   Subject to the terms of this agreement, Amir Ghanbari grants you a limited,
+   non-exclusive, non-transferable license to use this Software for personal
+   or educational purposes only.
+
+3. RESTRICTIONS
+   You may NOT:
+   - Modify, adapt, translate, or create derivative works
+   - Reverse engineer, decompile, or disassemble the Software
+   - Sell, rent, lease, transfer, assign, or sublicense the Software
+   - Use the Software for commercial purposes without explicit written permission
+   - Remove or alter any proprietary notices, labels, or marks
+   - Use the Software to develop competing products or services
+   - Extract or reuse the algorithms, models, or trading strategies
+   - Publish, distribute, or make the Software publicly available
+   - Use the Software for any illegal or unauthorized purpose
+
+4. COMMERCIAL USE
+   Any commercial use, including but not limited to:
+   - Trading with real money using this Software
+   - Providing trading services to others
+   - Selling access or licenses to this Software
+   - Using this Software as part of a commercial product or service
+   
+   Requires explicit written permission and a separate commercial license
+   agreement with Amir Ghanbari.
+
+5. PROPRIETARY ALGORITHMS AND MODELS
+   The following components are highly proprietary and protected:
+   - Multi-strategy ensemble routing algorithm
+   - Kelly Criterion position sizing implementation
+   - LSTM neural network model and training methodology
+   - Risk management and drawdown protection algorithms
+   - Signal confirmation and filtering logic
+   - All machine learning models and training data
+
+   These components may not be extracted, analyzed, or reused in any form.
+
+6. NO WARRANTY
+   THIS SOFTWARE IS PROVIDED "AS IS" WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+   FITNESS FOR A PARTICULAR PURPOSE, AND NONINFRINGEMENT.
+
+7. LIMITATION OF LIABILITY
+   IN NO EVENT SHALL AMIR GHANBARI BE LIABLE FOR ANY INDIRECT, INCIDENTAL,
+   SPECIAL, CONSEQUENTIAL, OR PUNITIVE DAMAGES, INCLUDING LOSS OF PROFITS,
+   DATA, OR USE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGES.
+
+8. TRADING DISCLAIMER
+   This Software is provided for educational purposes only. Trading financial
+   instruments involves substantial risk of loss. Past performance does not
+   guarantee future results. You assume all risks associated with trading.
+   Amir Ghanbari is not responsible for any financial losses incurred.
+
+9. TERMINATION
+   This license is effective until terminated. Your rights under this license
+   will terminate automatically without notice if you fail to comply with any
+   terms. Upon termination, you must destroy all copies of the Software.
+
+10. GOVERNING LAW
+    This agreement is governed by applicable international copyright and
+    intellectual property laws. Any disputes shall be resolved through
+    appropriate legal channels.
+
+11. CONTACT FOR LICENSING
+    For commercial licenses, derivative work permissions, or other inquiries:
+    Contact: amirgh23@github.com
+
+12. ACKNOWLEDGMENT
+    By using this Software, you acknowledge that you have read this agreement,
+    understand its terms, and agree to be bound by them.
+
+NOTICE: Unauthorized copying, modification, or distribution of this Software
+is strictly prohibited and may result in severe civil and criminal penalties.
+
+Last Updated: February 2024

@@ -91,8 +91,18 @@ pytest --cov=trading_bot tests/
 
 ## License
 
-MIT
+**PROPRIETARY LICENSE** - All rights reserved.
+
+This Software is proprietary and confidential. Unauthorized copying, modification,
+or distribution is strictly prohibited. See LICENSE file for complete terms.
+
+**Commercial Use**: Requires explicit written permission. Contact amirgh23@github.com
 
 ## Author
 
-amirgh23
+Amir Ghanbari (amirgh23)
+
+---
+
+**⚠️ DISCLAIMER**: This software is for educational purposes only. Trading involves
+substantial risk of loss. Past performance does not guarantee future results.
