@@ -14,6 +14,12 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QFont
 
 try:
+    from trading_bot.gui.dark_mode_dashboard import DarkModeDashboard
+except Exception as e:
+    print(f"Warning: Could not import DarkModeDashboard: {e}")
+    DarkModeDashboard = None
+
+try:
     from trading_bot.gui.advanced_professional_dashboard import AdvancedProfessionalDashboard
 except Exception as e:
     print(f"Warning: Could not import AdvancedProfessionalDashboard: {e}")
@@ -105,8 +111,17 @@ class LauncherWindow(QMainWindow):
     
     def setup_pages(self):
         """Setup all pages in stacked widget"""
-        # Page 0: Advanced Professional Dashboard with all charts, indicators, oscillators, and AI analysis
-        if AdvancedProfessionalDashboard:
+        # Page 0: Dark Mode Dashboard with full screen main chart
+        if DarkModeDashboard:
+            try:
+                dashboard = DarkModeDashboard()
+                self.stacked_widget.addWidget(dashboard)
+            except Exception as e:
+                error_widget = QWidget()
+                error_layout = QVBoxLayout(error_widget)
+                error_layout.addWidget(QLabel(f"Dashboard Error: {str(e)}"))
+                self.stacked_widget.addWidget(error_widget)
+        elif AdvancedProfessionalDashboard:
             try:
                 dashboard = AdvancedProfessionalDashboard()
                 self.stacked_widget.addWidget(dashboard)
@@ -459,32 +474,98 @@ Core Components:
         self.show_page(4)
     
     def setup_styles(self):
-        """Setup application styles"""
+        """Setup application styles - Dark Mode"""
         self.setStyleSheet("""
             QMainWindow {
-                background-color: #f0f0f0;
+                background-color: #0a0a0a;
+            }
+            QWidget {
+                background-color: #0a0a0a;
+                color: #00ff00;
             }
             QPushButton {
-                background-color: #0078d4;
-                color: white;
-                border: none;
+                background-color: #1a1a1a;
+                color: #00ff00;
+                border: 1px solid #00ff00;
                 border-radius: 4px;
                 padding: 8px;
                 font-weight: bold;
             }
             QPushButton:hover {
-                background-color: #005a9e;
+                background-color: #2a2a2a;
+                border: 1px solid #00ff00;
             }
             QPushButton:pressed {
-                background-color: #003d7a;
+                background-color: #1a1a1a;
+                border: 1px solid #00ff00;
             }
             QLabel {
-                color: #333;
+                color: #00ff00;
             }
             QTextEdit {
-                background-color: white;
-                border: 1px solid #ddd;
+                background-color: #1a1a1a;
+                color: #00ff00;
+                border: 1px solid #333333;
                 border-radius: 4px;
+            }
+            QComboBox {
+                background-color: #1a1a1a;
+                color: #00ff00;
+                border: 1px solid #333333;
+                border-radius: 4px;
+            }
+            QSpinBox, QDoubleSpinBox {
+                background-color: #1a1a1a;
+                color: #00ff00;
+                border: 1px solid #333333;
+                border-radius: 4px;
+            }
+            QCheckBox {
+                color: #00ff00;
+            }
+            QTabWidget::pane {
+                border: 1px solid #333333;
+            }
+            QTabBar::tab {
+                background-color: #1a1a1a;
+                color: #00ff00;
+                padding: 5px;
+                border: 1px solid #333333;
+            }
+            QTabBar::tab:selected {
+                background-color: #2a2a2a;
+                border: 1px solid #00ff00;
+            }
+            QTableWidget {
+                background-color: #1a1a1a;
+                color: #00ff00;
+                gridline-color: #333333;
+            }
+            QHeaderView::section {
+                background-color: #0a0a0a;
+                color: #00ff00;
+                padding: 3px;
+                border: 1px solid #333333;
+            }
+            QProgressBar {
+                background-color: #1a1a1a;
+                color: #00ff00;
+                border: 1px solid #333333;
+                border-radius: 4px;
+            }
+            QProgressBar::chunk {
+                background-color: #00ff00;
+            }
+            QScrollBar:vertical {
+                background-color: #1a1a1a;
+                width: 12px;
+            }
+            QScrollBar::handle:vertical {
+                background-color: #333333;
+                border-radius: 6px;
+            }
+            QScrollBar::handle:vertical:hover {
+                background-color: #555555;
             }
         """)
 
