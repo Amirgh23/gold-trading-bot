@@ -1,9 +1,10 @@
-"""Real-time alerts and notifications."""
+"""Real-time alerts and notifications with multi-language support."""
 
 import logging
 from typing import Optional, Callable
 from datetime import datetime
 from enum import Enum
+from trading_bot.i18n.translations import get_translator, Language
 
 logger = logging.getLogger(__name__)
 
@@ -16,19 +17,25 @@ class AlertLevel(Enum):
 
 
 class AlertManager:
-    """Manages real-time alerts and notifications."""
+    """Manages real-time alerts and notifications with bilingual support."""
     
-    def __init__(self):
+    def __init__(self, language: Language = Language.ENGLISH):
         self.alerts = []
         self.callbacks = []
         self.sound_enabled = True
         self.desktop_notifications_enabled = True
         self.email_enabled = False
         self.email_config = {}
+        self.translator = get_translator()
+        self.translator.set_language(language)
     
     def register_callback(self, callback: Callable) -> None:
         """Register callback for alerts."""
         self.callbacks.append(callback)
+    
+    def set_language(self, language: Language) -> None:
+        """Change alert language."""
+        self.translator.set_language(language)
     
     def trigger_alert(
         self,
