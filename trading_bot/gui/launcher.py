@@ -1,28 +1,29 @@
 """
-Trading Bot GUI Launcher - Central Hub for All Features
-Provides unified access to Dashboard, Backtesting, Tests, and Settings
+Gold Trading Bot - GUI Launcher with Advanced Dashboard
+Central hub for all trading features
 """
 
 import sys
-import json
-from pathlib import Path
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout,
     QPushButton, QLabel, QStackedWidget, QTabWidget, QTextEdit,
     QComboBox, QSpinBox, QDoubleSpinBox, QCheckBox, QFileDialog,
-    QMessageBox, QProgressBar, QStatusBar, QMenuBar, QMenu
+    QMessageBox, QProgressBar, QStatusBar
 )
-from PyQt5.QtCore import Qt, QThread, pyqtSignal, QTimer
-from PyQt5.QtGui import QFont, QIcon, QPixmap, QColor
-from PyQt5.QtChart import QChart, QChartView, QLineSeries
-from PyQt5.QtCore import QPointF
-import subprocess
-import threading
-from datetime import datetime
+from PyQt5.QtCore import Qt
+from PyQt5.QtGui import QFont
 
-from trading_bot.gui.language_switcher import LanguageSwitcher
-from trading_bot.gui.advanced_dashboard import AdvancedDashboard
-from trading_bot.core.config import ConfigManager
+try:
+    from trading_bot.gui.advanced_dashboard import AdvancedDashboard
+except Exception as e:
+    print(f"Warning: Could not import AdvancedDashboard: {e}")
+    AdvancedDashboard = None
+
+try:
+    from trading_bot.core.config import ConfigManager
+except Exception as e:
+    print(f"Warning: Could not import ConfigManager: {e}")
+    ConfigManager = None
 
 
 class LauncherWindow(QMainWindow):
@@ -30,10 +31,7 @@ class LauncherWindow(QMainWindow):
     
     def __init__(self):
         super().__init__()
-        self.config = ConfigManager()
-        self.language_switcher = LanguageSwitcher()
         self.current_language = "en"
-        
         self.init_ui()
         self.setup_styles()
         
@@ -41,9 +39,6 @@ class LauncherWindow(QMainWindow):
         """Initialize UI components"""
         self.setWindowTitle("Gold Trading Bot - Control Center")
         self.setGeometry(100, 100, 1400, 900)
-        
-        # Create menu bar
-        self.create_menu_bar()
         
         # Create central widget
         central_widget = QWidget()
@@ -63,32 +58,13 @@ class LauncherWindow(QMainWindow):
         # Status bar
         self.statusBar().showMessage("Ready")
         
-    def create_menu_bar(self):
-        """Create application menu bar"""
-        menubar = self.menuBar()
-        
-        # File menu
-        file_menu = menubar.addMenu("File")
-        file_menu.addAction("Settings", self.show_settings)
-        file_menu.addAction("Exit", self.close)
-        
-        # Language menu
-        lang_menu = menubar.addMenu("Language")
-        lang_menu.addAction("English", lambda: self.set_language("en"))
-        lang_menu.addAction("فارسی", lambda: self.set_language("fa"))
-        
-        # Help menu
-        help_menu = menubar.addMenu("Help")
-        help_menu.addAction("About", self.show_about)
-        help_menu.addAction("Documentation", self.show_docs)
-        
     def create_navigation_panel(self):
         """Create left navigation panel"""
         panel = QWidget()
         layout = QVBoxLayout(panel)
         
         # Title
-        title = QLabel("Trading Bot")
+        title = QLabel("🤖 Trading Bot")
         title_font = QFont()
         title_font.setPointSize(16)
         title_font.setBold(True)
@@ -97,7 +73,7 @@ class LauncherWindow(QMainWindow):
         
         # Navigation buttons
         buttons_config = [
-            ("📊 Dashboard", 0, "Real-time trading dashboard"),
+            ("📊 Dashboard", 0, "Real-time trading dashboard with charts"),
             ("📈 Backtesting", 1, "Test strategies on historical data"),
             ("🧪 Tests", 2, "Run unit and property-based tests"),
             ("⚙️ Settings", 3, "Configure trading parameters"),
@@ -115,7 +91,7 @@ class LauncherWindow(QMainWindow):
         layout.addStretch()
         
         # Status info
-        status_label = QLabel("Status: Ready")
+        status_label = QLabel("✓ Status: Ready")
         status_label.setStyleSheet("color: green; font-weight: bold;")
         layout.addWidget(status_label)
         
@@ -124,8 +100,20 @@ class LauncherWindow(QMainWindow):
     def setup_pages(self):
         """Setup all pages in stacked widget"""
         # Page 0: Advanced Dashboard with Charts
-        dashboard = AdvancedDashboard()
-        self.stacked_widget.addWidget(dashboard)
+        if AdvancedDashboard:
+            try:
+                dashboard = AdvancedDashboard()
+                self.stacked_widget.addWidget(dashboard)
+            except Exception as e:
+                error_widget = QWidget()
+                error_layout = QVBoxLayout(error_widget)
+                error_layout.addWidget(QLabel(f"Dashboard Error: {str(e)}"))
+                self.stacked_widget.addWidget(error_widget)
+        else:
+            error_widget = QWidget()
+            error_layout = QVBoxLayout(error_widget)
+            error_layout.addWidget(QLabel("Dashboard not available"))
+            self.stacked_widget.addWidget(error_widget)
         
         # Page 1: Backtesting
         backtest_page = self.create_backtest_page()
@@ -152,46 +140,35 @@ class LauncherWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Title
-        title = QLabel("Backtesting Engine")
+        title = QLabel("📈 Backtesting Engine")
         title_font = QFont()
         title_font.setPointSize(14)
         title_font.setBold(True)
         layout.addWidget(title)
         
-        # Configuration
         config_layout = QHBoxLayout()
-        
         config_layout.addWidget(QLabel("Start Date:"))
         config_layout.addWidget(QComboBox())
-        
         config_layout.addWidget(QLabel("End Date:"))
         config_layout.addWidget(QComboBox())
-        
         config_layout.addWidget(QLabel("Initial Capital:"))
         capital_spin = QDoubleSpinBox()
         capital_spin.setValue(10000)
         capital_spin.setMaximum(1000000)
         config_layout.addWidget(capital_spin)
-        
         layout.addLayout(config_layout)
         
-        # Results area
         results_text = QTextEdit()
         results_text.setReadOnly(True)
         layout.addWidget(QLabel("Results:"))
         layout.addWidget(results_text)
         
-        # Buttons
         button_layout = QHBoxLayout()
-        
         run_btn = QPushButton("Run Backtest")
         run_btn.clicked.connect(lambda: self.run_backtest(results_text))
         button_layout.addWidget(run_btn)
-        
         export_btn = QPushButton("Export Results")
         button_layout.addWidget(export_btn)
-        
         layout.addLayout(button_layout)
         layout.addStretch()
         
@@ -202,17 +179,14 @@ class LauncherWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Title
-        title = QLabel("Test Suite")
+        title = QLabel("🧪 Test Suite")
         title_font = QFont()
         title_font.setPointSize(14)
         title_font.setBold(True)
         layout.addWidget(title)
         
-        # Test selection
         test_layout = QHBoxLayout()
         test_layout.addWidget(QLabel("Select Tests:"))
-        
         test_combo = QComboBox()
         test_combo.addItems([
             "All Tests",
@@ -226,27 +200,21 @@ class LauncherWindow(QMainWindow):
         test_layout.addWidget(test_combo)
         layout.addLayout(test_layout)
         
-        # Progress bar
         progress = QProgressBar()
         layout.addWidget(QLabel("Progress:"))
         layout.addWidget(progress)
         
-        # Results area
         results_text = QTextEdit()
         results_text.setReadOnly(True)
         layout.addWidget(QLabel("Test Results:"))
         layout.addWidget(results_text)
         
-        # Buttons
         button_layout = QHBoxLayout()
-        
         run_btn = QPushButton("Run Tests")
         run_btn.clicked.connect(lambda: self.run_tests(results_text, progress))
         button_layout.addWidget(run_btn)
-        
         coverage_btn = QPushButton("Coverage Report")
         button_layout.addWidget(coverage_btn)
-        
         layout.addLayout(button_layout)
         layout.addStretch()
         
@@ -257,17 +225,13 @@ class LauncherWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Title
-        title = QLabel("Trading Settings")
+        title = QLabel("⚙️ Trading Settings")
         title_font = QFont()
         title_font.setPointSize(14)
         title_font.setBold(True)
         layout.addWidget(title)
         
-        # Trading parameters
         params_layout = QVBoxLayout()
-        
-        # Risk parameters
         params_layout.addWidget(QLabel("Risk Management:"))
         
         risk_layout = QHBoxLayout()
@@ -277,9 +241,7 @@ class LauncherWindow(QMainWindow):
         risk_layout.addWidget(max_dd)
         params_layout.addLayout(risk_layout)
         
-        # Position sizing
         params_layout.addWidget(QLabel("Position Sizing:"))
-        
         pos_layout = QHBoxLayout()
         pos_layout.addWidget(QLabel("Risk per Trade (%):"))
         risk_per_trade = QDoubleSpinBox()
@@ -289,7 +251,6 @@ class LauncherWindow(QMainWindow):
         
         layout.addLayout(params_layout)
         
-        # Save button
         save_btn = QPushButton("Save Settings")
         save_btn.clicked.connect(lambda: self.save_settings())
         layout.addWidget(save_btn)
@@ -303,17 +264,14 @@ class LauncherWindow(QMainWindow):
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Title
-        title = QLabel("Documentation")
+        title = QLabel("📚 Documentation")
         title_font = QFont()
         title_font.setPointSize(14)
         title_font.setBold(True)
         layout.addWidget(title)
         
-        # Documentation tabs
         tabs = QTabWidget()
         
-        # Quick Start
         quickstart_text = QTextEdit()
         quickstart_text.setReadOnly(True)
         quickstart_text.setText("""
@@ -334,7 +292,6 @@ Key Features:
         """)
         tabs.addTab(quickstart_text, "Quick Start")
         
-        # Architecture
         arch_text = QTextEdit()
         arch_text.setReadOnly(True)
         arch_text.setText("""
@@ -363,14 +320,12 @@ Core Components:
         widget = QWidget()
         layout = QVBoxLayout(widget)
         
-        # Title
-        title = QLabel("Tools & Utilities")
+        title = QLabel("🔧 Tools & Utilities")
         title_font = QFont()
         title_font.setPointSize(14)
         title_font.setBold(True)
         layout.addWidget(title)
         
-        # Tools buttons
         tools_layout = QVBoxLayout()
         
         tools = [
