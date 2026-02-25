@@ -21,6 +21,7 @@ import threading
 from datetime import datetime
 
 from trading_bot.gui.language_switcher import LanguageSwitcher
+from trading_bot.gui.advanced_dashboard import AdvancedDashboard
 from trading_bot.core.config import ConfigManager
 
 
@@ -122,16 +123,9 @@ class LauncherWindow(QMainWindow):
     
     def setup_pages(self):
         """Setup all pages in stacked widget"""
-        # Page 0: Dashboard
-        dashboard_widget = QWidget()
-        dashboard_layout = QVBoxLayout(dashboard_widget)
-        dashboard_layout.addWidget(QLabel("📊 Dashboard - Real-time Trading Monitor"))
-        dashboard_layout.addWidget(QLabel("Current Price: $2,050.00"))
-        dashboard_layout.addWidget(QLabel("Signal: BUY"))
-        dashboard_layout.addWidget(QLabel("Open Positions: 2"))
-        dashboard_layout.addWidget(QLabel("P&L: +$1,250.50"))
-        dashboard_layout.addStretch()
-        self.stacked_widget.addWidget(dashboard_widget)
+        # Page 0: Advanced Dashboard with Charts
+        dashboard = AdvancedDashboard()
+        self.stacked_widget.addWidget(dashboard)
         
         # Page 1: Backtesting
         backtest_page = self.create_backtest_page()
