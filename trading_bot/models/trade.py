@@ -20,6 +20,7 @@ class Trade:
     exit_size: float
     exit_reason: str
     strategy: str
+    side: str = "LONG"
     timeframe: str = "2m"
     stop_loss: float = 0.0
     take_profit: float = 0.0
@@ -30,14 +31,16 @@ class Trade:
     @property
     def pnl(self) -> float:
         """Calculate profit/loss in currency."""
-        return (self.exit_price - self.entry_price) * self.exit_size
+        multiplier = 1 if self.side == "LONG" else -1
+        return (self.exit_price - self.entry_price) * self.exit_size * multiplier
     
     @property
     def pnl_percent(self) -> float:
         """Calculate profit/loss percentage."""
         if self.entry_price == 0:
             return 0.0
-        return ((self.exit_price - self.entry_price) / self.entry_price) * 100
+        multiplier = 1 if self.side == "LONG" else -1
+        return ((self.exit_price - self.entry_price) / self.entry_price) * 100 * multiplier
     
     @property
     def duration(self) -> timedelta:
@@ -70,6 +73,7 @@ class Trade:
             'pnl': self.pnl,
             'pnl_percent': self.pnl_percent,
             'strategy': self.strategy,
+            'side': self.side,
             'timeframe': self.timeframe,
             'stop_loss': self.stop_loss,
             'take_profit': self.take_profit,

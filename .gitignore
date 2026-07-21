@@ -36,5 +36,6 @@ state/
 *.swo
 *~
 .pytest_cache/
+.hypothesis/
 .coverage
 htmlcov/

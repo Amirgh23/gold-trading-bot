@@ -22,7 +22,7 @@ class PositionManager:
         self,
         signal: Signal,
         size: float,
-        symbol: str = "XAUUSD",
+        symbol: Optional[str] = None,
     ) -> Optional[Position]:
         """Open a new position based on signal."""
         if size <= 0:
@@ -33,7 +33,7 @@ class PositionManager:
         side = "LONG" if signal.direction == "BUY" else "SHORT"
         
         position = Position(
-            symbol=symbol,
+            symbol=symbol or signal.symbol,
             side=side,
             entry_price=signal.entry_price,
             entry_time=signal.timestamp,
@@ -79,6 +79,7 @@ class PositionManager:
             exit_size=position.current_size,
             exit_reason=exit_reason,
             strategy=position.strategy,
+            side=position.side,
             stop_loss=position.stop_loss,
             take_profit=position.take_profit,
         )

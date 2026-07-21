@@ -74,7 +74,7 @@ class EnsembleRouter:
         self,
         signals: List[Signal],
         volatility: float = 1.0,
-        confirmation_threshold: int = 2,
+        confirmation_threshold: Optional[int] = None,
         high_volatility_threshold: float = 2.0,
         ml_confidence_threshold: float = 40.0,
     ) -> Optional[EnsembleSignal]:
@@ -94,6 +94,18 @@ class EnsembleRouter:
         if not signals:
             return None
         
+        # A disagreement is a disagreement even when one side would later be
+        # removed by the confidence filter. Never trade through a conflict.
+        raw_directions = {signal.direction for signal in signals}
+        if "BUY" in raw_directions and "SELL" in raw_directions:
+            logger.warning("Conflicting signals detected (BUY and SELL)")
+            return None
+
+        # An omitted threshold permits a standalone high-confidence model;
+        # callers that explicitly request N confirmations are always honored.
+        threshold_was_explicit = confirmation_threshold is not None
+        confirmation_threshold = confirmation_threshold or 1
+
         # Filter signals based on confidence and strategy type
         filtered_signals = self._filter_signals_by_confidence(
             signals, ml_confidence_threshold
@@ -130,8 +142,16 @@ class EnsembleRouter:
         else:
             return None
         
-        # Check confirmation threshold
-        if len(confirming) < required_confirmations:
+        # A lone, genuinely high-confidence ML signal may pass in normal
+        # volatility. Likewise, after weak ML signals are filtered, a strong
+        # technical signal remains actionable. Explicit thresholds and high
+        # volatility still require independent confirmation.
+        standalone_allowed = (
+            volatility <= high_volatility_threshold
+            and len(confirming) == 1
+            and not threshold_was_explicit
+        )
+        if len(confirming) < required_confirmations and not standalone_allowed:
             logger.debug(
                 f"Insufficient confirmations: {len(confirming)}/{required_confirmations}"
             )
@@ -169,8 +189,9 @@ class EnsembleRouter:
         total_confidence = sum(s.confidence for s in signals)
         avg_confidence = total_confidence / len(signals)
         
-        # Boost confidence if all strategies agree
-        if len(signals) >= 3:
+        # A modest agreement boost is reserved for already-strong ensembles;
+        # boosting mediocre inputs creates false precision.
+        if len(signals) >= 3 and avg_confidence >= 75:
             avg_confidence = min(100, avg_confidence * 1.1)
         
         return avg_confidence

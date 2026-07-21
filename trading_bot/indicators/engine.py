@@ -136,7 +136,9 @@ class IndicatorEngine:
         """Commodity Channel Index."""
         tp = (df['high'] + df['low'] + df['close']) / 3
         sma = tp.rolling(window=period).mean()
-        mad = tp.rolling(window=period).apply(lambda x: np.abs(x - x.mean()).mean())
+        # Vectorized rolling mean deviation avoids the Python callback that
+        # dominated the complete indicator pipeline.
+        mad = (tp - sma).abs().rolling(window=period, min_periods=period).mean()
         cci = (tp - sma) / (0.015 * mad)
         return cci
     

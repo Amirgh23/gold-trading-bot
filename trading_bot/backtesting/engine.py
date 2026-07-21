@@ -100,6 +100,7 @@ class BacktestEngine:
                         position_size,
                         risk_manager.get_current_drawdown(),
                         len(position_manager.get_open_positions()),
+                        entry_price=signal.entry_price,
                     ):
                         continue
                     

@@ -1,6 +1,7 @@
 """Advanced risk management with Kelly Criterion and dynamic position sizing."""
 
-from typing import List, Optional, Dict
+from typing import List
+import math
 import logging
 from trading_bot.models.position import Position
 
@@ -18,6 +19,7 @@ class RiskManager:
         max_drawdown_percent: float = 20.0,
         daily_loss_limit_percent: float = 5.0,
         kelly_fraction: float = 0.25,
+        risk_per_trade_percent: float = 1.0,
     ):
         self.account_equity = account_equity
         self.initial_equity = account_equity
@@ -26,6 +28,7 @@ class RiskManager:
         self.max_drawdown_percent = max_drawdown_percent
         self.daily_loss_limit_percent = daily_loss_limit_percent
         self.kelly_fraction = kelly_fraction
+        self.risk_per_trade_percent = risk_per_trade_percent
         
         self.daily_pnl = 0.0
         self.peak_equity = account_equity
@@ -49,7 +52,9 @@ class RiskManager:
         - p = win probability
         - q = loss probability (1 - p)
         """
-        if entry_price <= 0 or stop_loss <= 0:
+        if not all(map(math.isfinite, [entry_price, stop_loss, win_rate, risk_reward_ratio])):
+            return 0.0
+        if entry_price <= 0 or stop_loss <= 0 or risk_reward_ratio <= 0:
             return 0.0
         
         # Calculate risk per trade
@@ -68,12 +73,16 @@ class RiskManager:
         kelly_fraction = max(0, kelly_fraction)
         
         # Calculate position size
-        risk_amount = self.account_equity * kelly_fraction
+        fixed_risk = self.account_equity * self.risk_per_trade_percent / 100
+        risk_amount = min(self.account_equity * kelly_fraction, fixed_risk)
         position_size = risk_amount / risk_per_trade
-        
-        # Apply maximum position size limit
-        max_size = (self.account_equity * self.max_position_size_percent) / 100
+
+        # Cap notional exposure, then convert it back to asset units. The old
+        # implementation compared units to dollars, allowing huge leverage.
+        max_notional = self.account_equity * self.max_position_size_percent / 100
+        max_size = max_notional / entry_price
         position_size = min(position_size, max_size)
+        position_size *= self.get_position_size_adjustment()
         
         logger.debug(
             f"Position size: {position_size:.4f} "
@@ -87,12 +96,17 @@ class RiskManager:
         position_size: float,
         current_drawdown: float,
         open_positions_count: int,
+        entry_price: float = None,
     ) -> bool:
         """Check if position respects all risk limits."""
         # Check maximum position size
-        max_size = (self.account_equity * self.max_position_size_percent) / 100
-        if position_size > max_size:
-            logger.warning(f"Position size {position_size} exceeds maximum {max_size}")
+        max_notional = (self.account_equity * self.max_position_size_percent) / 100
+        if not math.isfinite(position_size) or position_size <= 0:
+            logger.warning("Position size must be positive and finite")
+            return False
+        exposure = position_size * entry_price if entry_price else position_size
+        if exposure > max_notional * (1 + 1e-9):
+            logger.warning(f"Position exposure {exposure} exceeds maximum {max_notional}")
             return False
         
         # Check maximum concurrent positions

@@ -1,108 +1,75 @@
-# Gold Trading Bot - Enhanced Edition
+# Gold Trading Bot
 
-A production-grade XAUUSD (gold) trading bot with multi-strategy ensemble, advanced risk management, and real-time monitoring.
+A risk-first Python research and paper-trading system for a liquid gold proxy
+(`PAXG/USDT` by default). It includes validated market-data ingestion, technical
+signals, position/risk management, backtesting components, persistence, and a
+desktop dashboard.
 
-## Features
+> Trading is risky. No strategy or software can guarantee profit. Treat results
+> as research until they survive out-of-sample, walk-forward, fee/slippage, and
+> paper-trading validation. The main orchestrator currently manages simulated
+> positions; it does **not** place live orders.
 
-- **Multi-Strategy Ensemble**: Technical Analysis + LSTM ML + DQN RL with intelligent routing
-- **Advanced Risk Management**: Kelly Criterion position sizing, drawdown protection, daily loss limits
-- **Smart Position Management**: Trailing stops, partial profit-taking, trend-based exits
-- **Real-Time Indicators**: 15+ technical indicators with <100ms calculation
-- **ML Models**: LSTM with automatic retraining and confidence scoring
-- **Backtesting**: Walk-forward analysis with Monte Carlo simulation
-- **Multi-Timeframe**: 2m/5m/15m confirmation system
-- **Order Execution**: Multi-exchange support with automatic failover
-- **Data Persistence**: SQLite with backup/recovery
-- **Error Handling**: Exponential backoff retry, crash recovery
-- **GUI Dashboard**: Real-time monitoring with PyQt5
-- **Comprehensive Logging**: JSON-formatted trade/signal/error logs
+## Safety improvements
 
-## Quick Start
+- Paper/sandbox configuration by default; no credentials are committed.
+- Position size is based on stop distance and capped by notional exposure.
+- Daily-loss and maximum-drawdown circuit breakers block new entries.
+- Fresh-candle gating prevents duplicate entries while polling.
+- Signals require a fresh EMA crossover, a slower-trend filter, RSI bounds, and
+  ATR-based stop/target levels.
+- Market data is validated, retried with bounded backoff, cached, and returned in
+  UTC chronological order.
+- Long and short P&L are calculated with the correct sign.
+- Unimplemented LSTM/DQN paths are disabled instead of being presented as active.
+
+## Quick start
 
 ```bash
-# Install dependencies
+python -m venv .venv
+# Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-
-# Configure
-cp config.example.json config.json
-# Edit config.json with your settings
-
-# Run bot
+copy config.example.json config.json
+python -m pytest tests -q
 python -m trading_bot.bot
-
-# Run GUI
-python run_gui.py
-
-# Run tests
-pytest tests/
 ```
 
-## Architecture
-
-```
-trading_bot/
-├── core/          # Logger, Config, Database, State Manager
-├── market/        # Data Provider, Cache
-├── indicators/    # Technical Indicators Engine
-├── strategies/    # Ensemble Router, Strategy Base
-├── risk/          # Risk Manager, Position Sizing
-├── execution/     # Order Executor, Position Manager
-├── ml/            # LSTM Model, Model Manager
-├── backtesting/   # Backtest Engine, Monte Carlo
-├── analytics/     # Performance Metrics
-├── gui/           # Dashboard, Alerts
-└── utils/         # Error Handler, Memory Manager
-```
+For a broker other than Binance, choose a symbol and timeframe supported by that
+broker. `XAUUSD` is not a Binance spot symbol; `PAXG/USDT` is used as the default
+gold-backed crypto proxy.
 
 ## Configuration
 
-See `config.example.json` for all available options:
-- Trading parameters (risk, position size, timeframes)
-- Exchange settings (API keys, symbols)
-- ML model settings (retraining triggers, confidence thresholds)
-- GUI preferences (alerts, notifications)
+The only supported top-level sections are `risk`, `strategy`, and `exchange`.
+Start from `config.example.json`; unknown keys fail during dataclass loading so
+configuration mistakes are visible immediately.
 
-## Testing
+Recommended initial process:
 
-```bash
-# Unit tests
-pytest tests/test_*.py -v
+1. Keep `sandbox_mode` enabled and risk at 0.25–0.5% per trade.
+2. Backtest on clean data with realistic spread, fees, and slippage.
+3. Select parameters only on training windows, then evaluate untouched test
+   windows and multiple market regimes.
+4. Paper trade for several weeks and compare fills against the simulation.
+5. Consider live execution only after defining broker-specific contract size,
+   tick value, minimum quantity, and an external kill switch.
 
-# Property-based tests
-pytest tests/test_properties_pbt.py -v
+## Architecture
 
-# Coverage
-pytest --cov=trading_bot tests/
+```text
+trading_bot/
+  market/        validated provider and bounded cache
+  indicators/    vectorized technical indicators
+  strategies/    confidence filtering and ensemble routing
+  risk/          stop-distance sizing and circuit breakers
+  execution/     order and position lifecycle
+  backtesting/   simulation, walk-forward, and Monte Carlo tools
+  core/          config, database, logging, and state
+  gui/           monitoring dashboards
 ```
 
-## Documentation
-
-- `QUICKSTART.md` - Quick start guide
-- `DEPLOYMENT_GUIDE.md` - Production deployment
-- `FINAL_REPORT.md` - Project completion report
-- `.kiro/specs/` - Full specification and design documents
-
-## Performance
-
-- Signal-to-order latency: <200ms
-- Indicator calculation: <100ms
-- Memory usage: <500MB
-- CPU usage: <50% (active trading)
+Run all tests with `python -m pytest tests -q`.
 
 ## License
 
-**PROPRIETARY LICENSE** - All rights reserved.
-
-This Software is proprietary and confidential. Unauthorized copying, modification,
-or distribution is strictly prohibited. See LICENSE file for complete terms.
-
-**Commercial Use**: Requires explicit written permission. Contact amirgh23@github.com
-
-## Author
-
-Amir Ghanbari (amirgh23)
-
----
-
-**⚠️ DISCLAIMER**: This software is for educational purposes only. Trading involves
-substantial risk of loss. Past performance does not guarantee future results.
+Proprietary. See `LICENSE`.

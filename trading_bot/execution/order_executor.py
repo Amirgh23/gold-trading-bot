@@ -166,6 +166,9 @@ class OrderExecutor:
                     order.price
                 )
             
+            if not isinstance(result, dict) or not result.get('id'):
+                logger.error("Exchange returned an invalid order response")
+                return None
             return result
         except Exception as e:
             logger.error(f"Exchange execution error: {e}")

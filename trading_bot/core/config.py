@@ -40,9 +40,9 @@ class RiskConfig:
 class StrategyConfig:
     """Strategy configuration."""
     technical_enabled: bool = True
-    lstm_enabled: bool = True
-    dqn_enabled: bool = True
-    confirmation_threshold: int = 2  # Require 2 strategies to confirm
+    lstm_enabled: bool = False
+    dqn_enabled: bool = False
+    confirmation_threshold: int = 1
     high_volatility_threshold: float = 2.0  # 2 std dev
     high_volatility_confirmation: int = 3  # Require 3 strategies when volatile
     
@@ -58,8 +58,8 @@ class StrategyConfig:
 class ExchangeConfig:
     """Exchange configuration."""
     exchange: str = "binance"
-    symbol: str = "XAUUSD"
-    timeframe: str = "2m"
+    symbol: str = "PAXG/USDT"
+    timeframe: str = "5m"
     api_key: Optional[str] = None
     api_secret: Optional[str] = None
     sandbox_mode: bool = True

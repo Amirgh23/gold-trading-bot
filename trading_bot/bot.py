@@ -1,6 +1,7 @@
 """Main trading bot orchestrator."""
 
 import logging
+import time
 from datetime import datetime
 from typing import Optional, List
 import pandas as pd
@@ -47,6 +48,7 @@ class TradingBot:
             max_drawdown_percent=self.config.risk.max_drawdown_percent,
             daily_loss_limit_percent=self.config.risk.daily_loss_limit_percent,
             kelly_fraction=self.config.risk.kelly_fraction,
+            risk_per_trade_percent=self.config.risk.risk_per_trade_percent,
         )
         
         self.position_manager = PositionManager()
@@ -55,6 +57,7 @@ class TradingBot:
         self.multi_timeframe = MultiTimeframeAnalyzer()
         
         self.is_running = False
+        self._last_signal_candle = None
         logger.info("Trading Bot initialized successfully")
     
     def start(self):
@@ -103,6 +106,7 @@ class TradingBot:
                 
                 if df is None or len(df) < 50:
                     logger.warning("Insufficient market data")
+                    time.sleep(5)
                     continue
                 
                 # Calculate indicators
@@ -119,8 +123,18 @@ class TradingBot:
                 # Check exit conditions
                 self._check_exits(current_price)
                 
-                # Generate signals
-                signals = self._generate_signals(df)
+                if self.risk_manager.should_stop_trading():
+                    logger.error("Circuit breaker active; new entries are disabled")
+                    time.sleep(5)
+                    continue
+
+                # Generate at most once per candle. Position exits above remain
+                # responsive on every poll.
+                candle_id = df.index[-1]
+                signals = []
+                if candle_id != self._last_signal_candle:
+                    signals = self._generate_signals(df)
+                    self._last_signal_candle = candle_id
                 
                 # Route through ensemble
                 if signals:
@@ -136,9 +150,13 @@ class TradingBot:
                 
                 # Log metrics
                 self._log_metrics()
+                # Do not hammer the broker and do not process the same candle
+                # hundreds of times between closes.
+                time.sleep(5)
             
             except Exception as e:
                 logger.error(f"Error in trading loop: {e}", exc_info=True)
+                time.sleep(5)
     
     def _generate_signals(self, df: pd.DataFrame) -> List:
         """Generate signals from strategies."""
@@ -175,8 +193,16 @@ class TradingBot:
         atr = df['atr'].iloc[-1]
         close = df['close'].iloc[-1]
         
-        # BUY signal
-        if ema_5 > ema_13 and rsi < 70 and rsi > 40:
+        previous_ema_5 = df['ema_5'].iloc[-2]
+        previous_ema_13 = df['ema_13'].iloc[-2]
+        ema_50 = df['ema_50'].iloc[-1]
+
+        if any(pd.isna(v) for v in [ema_5, ema_13, previous_ema_5, previous_ema_13, rsi, atr]):
+            return None
+
+        # Signal only on a fresh crossover, aligned with the slower trend.
+        # This prevents repeated entries on every polling iteration.
+        if previous_ema_5 <= previous_ema_13 and ema_5 > ema_13 and close > ema_50 and 45 < rsi < 68:
             from trading_bot.models.signal import Signal
             return Signal(
                 timestamp=datetime.now(),
@@ -191,7 +217,7 @@ class TradingBot:
             )
         
         # SELL signal
-        if ema_5 < ema_13 and rsi > 30 and rsi < 60:
+        if previous_ema_5 >= previous_ema_13 and ema_5 < ema_13 and close < ema_50 and 32 < rsi < 55:
             from trading_bot.models.signal import Signal
             return Signal(
                 timestamp=datetime.now(),
@@ -230,6 +256,7 @@ class TradingBot:
             position_size,
             self.risk_manager.get_current_drawdown(),
             len(self.position_manager.get_open_positions()),
+            entry_price=ensemble_signal.entry_price,
         ):
             logger.warning("Position rejected due to risk limits")
             return
@@ -262,6 +289,9 @@ class TradingBot:
                 
                 if trade:
                     self.db.save_trade(trade.to_dict())
+                    self.risk_manager.update_equity(
+                        self.risk_manager.account_equity + trade.pnl
+                    )
                     logger.info(f"Position closed: {exit_reason} (P&L: {trade.pnl:.2f})")
     
     def _log_metrics(self):
@@ -285,3 +315,21 @@ class TradingBot:
             'unrealized_pnl': self.position_manager.get_total_unrealized_pnl(),
             'drawdown': self.risk_manager.get_current_drawdown(),
         }
+
+
+def main() -> None:
+    """Run the paper-trading orchestrator from the command line."""
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Gold paper-trading bot")
+    parser.add_argument(
+        "--config",
+        default="config.json",
+        help="Path to the JSON configuration file (default: config.json)",
+    )
+    args = parser.parse_args()
+    TradingBot(args.config).start()
+
+
+if __name__ == "__main__":
+    main()
