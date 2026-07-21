@@ -1,442 +1,542 @@
-"""
-Dark Mode Professional Trading Dashboard - LIVE DATA VERSION
-Full screen main chart with real-time updates
-"""
+"""Pulse Matrix desktop dashboard in a violet/cyan visual system."""
 
-import sys
+from datetime import datetime, timezone
+
 import numpy as np
 import pandas as pd
-from datetime import datetime, timedelta
-from PyQt5.QtWidgets import (
-    QWidget, QVBoxLayout, QHBoxLayout, QLabel, QTabWidget,
-    QTableWidget, QTableWidgetItem, QScrollArea, QFrame, QGridLayout
+from PyQt5.QtChart import (
+    QChart,
+    QChartView,
+    QCandlestickSeries,
+    QCandlestickSet,
+    QDateTimeAxis,
+    QLineSeries,
+    QValueAxis,
 )
-from PyQt5.QtCore import Qt, QTimer, QThread, pyqtSignal
-from PyQt5.QtGui import QFont, QColor, QBrush, QPainter
-from PyQt5.QtChart import QChart, QChartView, QCandlestickSeries, QCandlestickSet
-from PyQt5.QtChart import QLineSeries, QDateTimeAxis, QValueAxis
-from PyQt5.QtCore import QDateTime, QPointF
-from trading_bot.gui.live_data_manager import LiveDataUpdater, LiveAnalysisUpdater
+from PyQt5.QtCore import QDateTime, Qt, QTimer
+from PyQt5.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt5.QtWidgets import (
+    QAbstractItemView,
+    QFrame,
+    QGridLayout,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QMessageBox,
+    QProgressBar,
+    QPushButton,
+    QSizePolicy,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
+from trading_bot.gui.cyberpunk_theme import COLORS, mono_font, ui_font
 
 
 class DarkModeDashboardLive(QWidget):
-    """Dark mode dashboard with LIVE DATA - Real-time updates"""
-    
+    """Professional paper-trading dashboard with clearly labelled demo data."""
+
     def __init__(self):
         super().__init__()
+        self.setObjectName("DashboardRoot")
         self.data = self.generate_sample_data()
-        self.analysis = None
-        self.chart_view = None
-        self.chart = None
-        self.table = None
-        
-        # Live data managers
-        self.data_updater = LiveDataUpdater(self.data)
-        self.analysis_updater = LiveAnalysisUpdater(self.data_updater)
-        
-        self.init_ui()
-        self.apply_dark_mode()
-        self.start_live_updates()
-        
-    def start_live_updates(self):
-        """Start live data and analysis updates"""
-        # Connect signals
-        self.data_updater.data_updated.connect(self.on_data_updated)
-        self.analysis_updater.analysis_updated.connect(self.on_analysis_updated)
-        
-        # Start threads
-        self.data_updater.start()
-        self.analysis_updater.start()
-        
-    def on_data_updated(self, data):
-        """Handle live data update"""
-        self.data = data
-        self.refresh_chart()
-    
-    def on_analysis_updated(self, analysis):
-        """Handle live analysis update"""
-        self.analysis = analysis
-        self.update_metrics(analysis)
-        self.update_analysis_table(analysis)
-    
-    def refresh_chart(self):
-        """Refresh chart with new data"""
-        if self.chart is None or self.chart_view is None:
-            return
-        
-        try:
-            # Clear old series
-            self.chart.removeAllSeries()
-            
-            # Create candlestick series
-            series = QCandlestickSeries()
-            series.setName("XAUUSD")
-            
-            # Add candlesticks
-            for idx, row in self.data.tail(100).iterrows():
-                candlestick = QCandlestickSet(
-                    row['open'], row['high'], row['low'], row['close']
+        self.feed_running = True
+        self._rng = np.random.default_rng(20260722)
+
+        self._build_ui()
+        self._refresh_all()
+
+        self.clock_timer = QTimer(self)
+        self.clock_timer.timeout.connect(self._update_clock)
+        self.clock_timer.start(1000)
+
+        self.market_timer = QTimer(self)
+        self.market_timer.timeout.connect(self._tick_demo_feed)
+        self.market_timer.start(2200)
+
+    # ---------- composition ----------
+    def _build_ui(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 14, 18, 14)
+        root.setSpacing(12)
+
+        root.addLayout(self._build_header())
+
+        content = QHBoxLayout()
+        content.setSpacing(12)
+
+        center = QVBoxLayout()
+        center.setSpacing(10)
+        center.addLayout(self._build_metrics())
+        center.addWidget(self._build_chart(), 1)
+        center.addWidget(self._build_decision_log())
+        content.addLayout(center, 5)
+        content.addWidget(self._build_risk_console(), 2)
+
+        root.addLayout(content, 1)
+
+    def _build_header(self):
+        layout = QHBoxLayout()
+        layout.setSpacing(16)
+
+        pair_stack = QVBoxLayout()
+        pair_stack.setSpacing(0)
+        pair_caption = QLabel("INSTRUMENT")
+        pair_caption.setObjectName("Eyebrow")
+        pair_stack.addWidget(pair_caption)
+        pair = QLabel("PAXG / USDT")
+        pair.setObjectName("Gold")
+        pair.setFont(ui_font(16, 700))
+        pair_stack.addWidget(pair)
+        layout.addLayout(pair_stack)
+        layout.addStretch()
+
+        self.mode_badge = QLabel("  PAPER MODE  ")
+        self.mode_badge.setObjectName("Cyan")
+        self.mode_badge.setFont(mono_font(10, 700))
+        self.mode_badge.setStyleSheet(
+            f"color:{COLORS['cyan']}; background:{COLORS['cyan_soft']};"
+            f"border:1px solid {COLORS['cyan']}; border-radius:4px; padding:7px 11px;"
+        )
+        layout.addWidget(self.mode_badge)
+
+        self.feed_badge = QLabel("DEMO FEED  /  CONNECTED")
+        self.feed_badge.setObjectName("Positive")
+        self.feed_badge.setFont(mono_font(9, 600))
+        layout.addWidget(self.feed_badge)
+
+        self.clock_label = QLabel()
+        self.clock_label.setObjectName("Muted")
+        self.clock_label.setFont(mono_font(9))
+        layout.addWidget(self.clock_label)
+        self._update_clock()
+        return layout
+
+    def _build_metrics(self):
+        layout = QHBoxLayout()
+        layout.setSpacing(8)
+        self.price_value = self._metric(layout, "LAST PRICE", "—", "Gold")
+        self.change_value = self._metric(layout, "SESSION", "—", "Positive")
+        self.signal_value = self._metric(layout, "STRATEGY SIGNAL", "WAIT", "Violet")
+        self.confidence_value = self._metric(layout, "SIGNAL SCORE", "—", "Cyan")
+        self.volatility_value = self._metric(layout, "VOLATILITY", "—", "Muted")
+        return layout
+
+    def _metric(self, parent, title, value, value_object):
+        panel = QFrame()
+        panel.setObjectName("Metric")
+        panel.setMinimumHeight(72)
+        box = QVBoxLayout(panel)
+        box.setContentsMargins(12, 9, 12, 9)
+        box.setSpacing(3)
+        caption = QLabel(title)
+        caption.setObjectName("Muted")
+        caption.setFont(ui_font(8, 650))
+        result = QLabel(value)
+        result.setObjectName(value_object)
+        result.setFont(mono_font(13, 700))
+        box.addWidget(caption)
+        box.addWidget(result)
+        parent.addWidget(panel, 1)
+        return result
+
+    def _build_chart(self):
+        container = QFrame()
+        container.setObjectName("Panel")
+        box = QVBoxLayout(container)
+        box.setContentsMargins(12, 10, 12, 8)
+        box.setSpacing(6)
+
+        toolbar = QHBoxLayout()
+        title = QLabel("MARKET STRUCTURE")
+        title.setObjectName("Eyebrow")
+        toolbar.addWidget(title)
+        toolbar.addStretch()
+        for label in ("5m", "15m", "1H", "4H"):
+            button = QPushButton(label)
+            button.setCheckable(True)
+            button.setFixedSize(54, 28)
+            button.clicked.connect(lambda checked, value=label: self._select_timeframe(value))
+            button.setProperty("timeframe", label)
+            if label == "5m":
+                button.setChecked(True)
+                button.setStyleSheet(
+                    f"color:{COLORS['cyan']}; border-color:{COLORS['cyan']};"
+                    f"background:{COLORS['cyan_soft']};"
                 )
-                candlestick.setTimestamp(int(row['date'].timestamp() * 1000))
-                series.append(candlestick)
-            
-            self.chart.addSeries(series)
-            
-            # Add MAs
-            ma20_series = QLineSeries()
-            ma20_series.setName("MA20")
-            for idx, row in self.data.tail(100).iterrows():
-                if pd.notna(row.get('MA20')):
-                    ma20_series.append(int(row['date'].timestamp() * 1000), row['MA20'])
-            self.chart.addSeries(ma20_series)
-            
-            ma50_series = QLineSeries()
-            ma50_series.setName("MA50")
-            for idx, row in self.data.tail(100).iterrows():
-                if pd.notna(row.get('MA50')):
-                    ma50_series.append(int(row['date'].timestamp() * 1000), row['MA50'])
-            self.chart.addSeries(ma50_series)
-            
-            ma200_series = QLineSeries()
-            ma200_series.setName("MA200")
-            for idx, row in self.data.tail(100).iterrows():
-                if pd.notna(row.get('MA200')):
-                    ma200_series.append(int(row['date'].timestamp() * 1000), row['MA200'])
-            self.chart.addSeries(ma200_series)
-        except Exception as e:
-            print(f"Error refreshing chart: {e}")
-    
-    def update_metrics(self, analysis):
-        """Update top metrics"""
-        if analysis:
-            price = analysis.get('current_price', 0)
-            confidence = analysis.get('confidence', 0)
-            volatility = analysis.get('volatility', 'MEDIUM')
-            
-            # Update confidence
-            self.confidence_widget.findChild(QLabel).setText(f"{confidence:.0f}%")
-            
-            # Update volatility
-            vol_color = "#ff0000" if volatility == "HIGH" else "#00ff00"
-            self.volatility_widget.setStyleSheet(f"""
-                QFrame {{
-                    background-color: #1a1a1a;
-                    border: 1px solid {vol_color};
-                    border-radius: 3px;
-                    padding: 3px;
-                }}
-            """)
-    
-    def update_analysis_table(self, analysis):
-        """Update analysis table with live data"""
-        if not analysis or self.table is None:
-            return
-        
-        try:
-            indicators = [
-                ("Trend", analysis.get('trend', 'N/A'), "BULLISH" if "UP" in analysis.get('trend', '') else "BEARISH"),
-                ("RSI (14)", f"{analysis.get('rsi', 0):.1f}", analysis.get('rsi_signal', 'N/A')),
-                ("MACD", f"{analysis.get('macd', 0):.4f}", analysis.get('macd_signal', 'N/A')),
-                ("Stochastic", f"{analysis.get('stoch', 0):.1f}", analysis.get('stoch_signal', 'N/A')),
-                ("Bollinger Bands", "MIDDLE", analysis.get('bb_signal', 'N/A')),
-                ("MA20", f"{analysis.get('ma20', 0):.2f}", "ABOVE" if analysis.get('current_price', 0) > analysis.get('ma20', 0) else "BELOW"),
-                ("MA50", f"{analysis.get('ma50', 0):.2f}", "ABOVE" if analysis.get('current_price', 0) > analysis.get('ma50', 0) else "BELOW"),
-                ("Volatility", analysis.get('volatility', 'N/A'), "NORMAL"),
-                ("AI Recommendation", analysis.get('recommendation', 'HOLD'), "STRONG"),
-                ("Confidence Level", f"{analysis.get('confidence', 0):.0f}%", "HIGH"),
-            ]
-            
-            for i, (indicator, value, signal) in enumerate(indicators):
-                if i < self.table.rowCount():
-                    self.table.setItem(i, 0, QTableWidgetItem(indicator))
-                    self.table.setItem(i, 1, QTableWidgetItem(str(value)))
-                    
-                    signal_item = QTableWidgetItem(signal)
-                    
-                    if "BULL" in signal or "BUY" in signal or "ABOVE" in signal:
-                        signal_item.setBackground(QBrush(QColor("#1a3a1a")))
-                        signal_item.setForeground(QBrush(QColor("#00ff00")))
-                    elif "BEAR" in signal or "SELL" in signal or "BELOW" in signal:
-                        signal_item.setBackground(QBrush(QColor("#3a1a1a")))
-                        signal_item.setForeground(QBrush(QColor("#ff0000")))
-                    elif "OVERBOUGHT" in signal:
-                        signal_item.setBackground(QBrush(QColor("#3a3a1a")))
-                        signal_item.setForeground(QBrush(QColor("#ffff00")))
-                    
-                    self.table.setItem(i, 2, signal_item)
-        except Exception as e:
-            print(f"Error updating table: {e}")
-        
-    def init_ui(self):
-        """Initialize UI"""
-        main_layout = QVBoxLayout(self)
-        main_layout.setContentsMargins(5, 5, 5, 5)
-        main_layout.setSpacing(5)
-        
-        # Top section - Key metrics (compact)
-        top_layout = QHBoxLayout()
-        top_layout.setSpacing(5)
-        
-        # Current price
-        price_widget = self.create_metric_widget("Price", "$2,050.25", "#00ff00")
-        top_layout.addWidget(price_widget)
-        
-        # Change
-        change_widget = self.create_metric_widget("Change", "+2.5%", "#00ff00")
-        top_layout.addWidget(change_widget)
-        
-        # AI Signal
-        self.signal_widget = self.create_metric_widget("Signal", "ANALYZING...", "#ffff00")
-        top_layout.addWidget(self.signal_widget)
-        
-        # Confidence
-        self.confidence_widget = self.create_metric_widget("Confidence", "0%", "#888888")
-        top_layout.addWidget(self.confidence_widget)
-        
-        # Volatility
-        self.volatility_widget = self.create_metric_widget("Volatility", "MEDIUM", "#ff8800")
-        top_layout.addWidget(self.volatility_widget)
-        
-        # Live indicator
-        live_widget = self.create_metric_widget("Status", "🔴 LIVE", "#ff0000")
-        top_layout.addWidget(live_widget)
-        
-        main_layout.addLayout(top_layout, 0)
-        
-        # Main chart (12/12 - full width and height)
-        main_chart = self.create_main_chart()
-        main_layout.addWidget(main_chart, 1)
-        
-        # Bottom section - AI Analysis Table (compact)
-        ai_table = self.create_ai_analysis_table()
-        main_layout.addWidget(ai_table, 0)
-        
-    def create_metric_widget(self, title, value, color):
-        """Create metric display widget"""
-        widget = QFrame()
-        widget.setStyleSheet(f"""
-            QFrame {{
-                background-color: #1a1a1a;
-                border: 1px solid {color};
-                border-radius: 3px;
-                padding: 3px;
-            }}
-        """)
-        widget.setMaximumHeight(50)
-        
-        layout = QVBoxLayout(widget)
-        layout.setContentsMargins(3, 2, 3, 2)
-        layout.setSpacing(1)
-        
-        title_label = QLabel(title)
-        title_font = QFont()
-        title_font.setPointSize(8)
-        title_label.setFont(title_font)
-        title_label.setStyleSheet("color: #888888;")
-        
-        value_label = QLabel(value)
-        value_font = QFont()
-        value_font.setPointSize(10)
-        value_font.setBold(True)
-        value_label.setFont(value_font)
-        value_label.setStyleSheet(f"color: {color};")
-        
-        layout.addWidget(title_label)
-        layout.addWidget(value_label)
-        
-        return widget
-    
-    def create_main_chart(self):
-        """Create main candlestick chart with all indicators"""
+            toolbar.addWidget(button)
+        box.addLayout(toolbar)
+
         self.chart = QChart()
-        self.chart.setTitle("XAUUSD - Real-Time Price Analysis (LIVE DATA)")
-        self.chart.setAnimationOptions(QChart.SeriesAnimations)
-        self.chart.setBackgroundBrush(QBrush(QColor("#0a0a0a")))
-        self.chart.setTitleBrush(QBrush(QColor("#00ff00")))
-        
-        # Create candlestick series
-        series = QCandlestickSeries()
-        series.setName("XAUUSD")
-        
-        # Add candlesticks
-        for idx, row in self.data.tail(100).iterrows():
-            candlestick = QCandlestickSet(
-                row['open'], row['high'], row['low'], row['close']
-            )
-            candlestick.setTimestamp(int(row['date'].timestamp() * 1000))
-            series.append(candlestick)
-        
-        self.chart.addSeries(series)
-        
-        # Add MA20 (Blue)
-        ma20_series = QLineSeries()
-        ma20_series.setName("MA20")
-        for idx, row in self.data.tail(100).iterrows():
-            if pd.notna(row.get('MA20')):
-                ma20_series.append(int(row['date'].timestamp() * 1000), row['MA20'])
-        self.chart.addSeries(ma20_series)
-        
-        # Add MA50 (Red)
-        ma50_series = QLineSeries()
-        ma50_series.setName("MA50")
-        for idx, row in self.data.tail(100).iterrows():
-            if pd.notna(row.get('MA50')):
-                ma50_series.append(int(row['date'].timestamp() * 1000), row['MA50'])
-        self.chart.addSeries(ma50_series)
-        
-        # Add MA200 (Yellow)
-        ma200_series = QLineSeries()
-        ma200_series.setName("MA200")
-        for idx, row in self.data.tail(100).iterrows():
-            if pd.notna(row.get('MA200')):
-                ma200_series.append(int(row['date'].timestamp() * 1000), row['MA200'])
-        self.chart.addSeries(ma200_series)
-        
-        # Axes
-        axis_x = QDateTimeAxis()
-        axis_x.setFormat("hh:mm")
-        axis_x.setLabelsColor(QColor("#888888"))
-        axis_x.setGridLineColor(QColor("#222222"))
-        self.chart.addAxis(axis_x, Qt.AlignBottom)
-        series.attachAxis(axis_x)
-        ma20_series.attachAxis(axis_x)
-        ma50_series.attachAxis(axis_x)
-        ma200_series.attachAxis(axis_x)
-        
-        axis_y = QValueAxis()
-        axis_y.setRange(self.data['low'].min() - 5, self.data['high'].max() + 5)
-        axis_y.setLabelsColor(QColor("#888888"))
-        axis_y.setGridLineColor(QColor("#222222"))
-        self.chart.addAxis(axis_y, Qt.AlignLeft)
-        series.attachAxis(axis_y)
-        ma20_series.attachAxis(axis_y)
-        ma50_series.attachAxis(axis_y)
-        ma200_series.attachAxis(axis_y)
-        
+        self.chart.setBackgroundVisible(False)
+        self.chart.setPlotAreaBackgroundVisible(True)
+        self.chart.setPlotAreaBackgroundBrush(QBrush(QColor(COLORS["void"])))
+        self.chart.setMargins(type(self.chart.margins())(4, 4, 4, 4))
+        self.chart.legend().setVisible(True)
+        self.chart.legend().setLabelColor(QColor(COLORS["muted"]))
+        self.chart.legend().setFont(mono_font(8))
+        self.chart.legend().setAlignment(Qt.AlignTop)
+
         self.chart_view = QChartView(self.chart)
         self.chart_view.setRenderHint(QPainter.Antialiasing)
-        self.chart_view.setStyleSheet("background-color: #0a0a0a;")
-        
-        return self.chart_view
-    
-    def create_ai_analysis_table(self):
-        """Create AI analysis table"""
-        self.table = QTableWidget()
-        self.table.setColumnCount(3)
-        self.table.setHorizontalHeaderLabels(["Indicator", "Value", "Signal"])
-        self.table.setRowCount(10)
-        self.table.setMaximumHeight(120)
-        self.table.setStyleSheet("""
-            QTableWidget {
-                background-color: #1a1a1a;
-                color: #00ff00;
-                gridline-color: #333333;
-                border: 1px solid #333333;
-            }
-            QHeaderView::section {
-                background-color: #0a0a0a;
-                color: #00ff00;
-                padding: 3px;
-                border: 1px solid #333333;
-            }
-            QTableWidget::item {
-                padding: 2px;
-            }
-        """)
-        
-        indicators = [
-            ("Trend", "UPTREND", "BULLISH"),
-            ("RSI (14)", "65", "NEUTRAL"),
-            ("MACD", "0.25", "BULLISH"),
-            ("Stochastic", "75", "OVERBOUGHT"),
-            ("Bollinger Bands", "MIDDLE", "NEUTRAL"),
-            ("MA20", "2048.50", "ABOVE"),
-            ("MA50", "2045.00", "ABOVE"),
-            ("Volatility", "MEDIUM", "NORMAL"),
-            ("AI Recommendation", "BUY", "STRONG"),
-            ("Confidence Level", "78%", "HIGH"),
-        ]
-        
-        for i, (indicator, value, signal) in enumerate(indicators):
-            self.table.setItem(i, 0, QTableWidgetItem(indicator))
-            self.table.setItem(i, 1, QTableWidgetItem(value))
-            
-            signal_item = QTableWidgetItem(signal)
-            
-            if "BULL" in signal or "BUY" in signal or "ABOVE" in signal:
-                signal_item.setBackground(QBrush(QColor("#1a3a1a")))
-                signal_item.setForeground(QBrush(QColor("#00ff00")))
-            elif "BEAR" in signal or "SELL" in signal or "BELOW" in signal:
-                signal_item.setBackground(QBrush(QColor("#3a1a1a")))
-                signal_item.setForeground(QBrush(QColor("#ff0000")))
-            elif "OVERBOUGHT" in signal:
-                signal_item.setBackground(QBrush(QColor("#3a3a1a")))
-                signal_item.setForeground(QBrush(QColor("#ffff00")))
-            
-            self.table.setItem(i, 2, signal_item)
-        
-        return self.table
-    
-    def generate_sample_data(self):
-        """Generate sample data"""
-        dates = pd.date_range(end=datetime.now(), periods=300, freq='5min')
-        
-        np.random.seed(42)
-        prices = 2050 + np.cumsum(np.random.randn(300) * 2)
-        
-        data = pd.DataFrame({
-            'date': dates,
-            'open': prices + np.random.randn(300) * 0.5,
-            'high': prices + np.abs(np.random.randn(300) * 1.5),
-            'low': prices - np.abs(np.random.randn(300) * 1.5),
-            'close': prices,
-            'volume': np.random.randint(1000, 10000, 300)
-        })
-        
-        # Calculate MAs
-        data['MA20'] = data['close'].rolling(20).mean()
-        data['MA50'] = data['close'].rolling(50).mean()
-        data['MA200'] = data['close'].rolling(200).mean()
-        
-        return data
-    
-    def apply_dark_mode(self):
-        """Apply dark mode to entire widget"""
-        self.setStyleSheet("""
-            QWidget {
-                background-color: #0a0a0a;
-                color: #00ff00;
-            }
-            QLabel {
-                color: #00ff00;
-            }
-            QTableWidget {
-                background-color: #1a1a1a;
-                color: #00ff00;
-                gridline-color: #333333;
-            }
-            QHeaderView::section {
-                background-color: #0a0a0a;
-                color: #00ff00;
-                padding: 3px;
-                border: 1px solid #333333;
-            }
-            QScrollBar:vertical {
-                background-color: #1a1a1a;
-                width: 12px;
-            }
-            QScrollBar::handle:vertical {
-                background-color: #333333;
-                border-radius: 6px;
-            }
-            QScrollBar::handle:vertical:hover {
-                background-color: #555555;
-            }
-        """)
-    
-    def closeEvent(self, event):
-        """Clean up when closing"""
-        self.data_updater.stop()
-        self.analysis_updater.stop()
-        event.accept()
+        self.chart_view.setMinimumHeight(380)
+        self.chart_view.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        self.chart_view.setStyleSheet("background: transparent; border: 0;")
+        box.addWidget(self.chart_view, 1)
+        return container
 
+    def _build_decision_log(self):
+        panel = QFrame()
+        panel.setObjectName("Panel")
+        box = QVBoxLayout(panel)
+        box.setContentsMargins(12, 9, 12, 10)
+        box.setSpacing(6)
+
+        heading = QHBoxLayout()
+        title = QLabel("DECISION LOG")
+        title.setObjectName("Eyebrow")
+        heading.addWidget(title)
+        heading.addStretch()
+        label = QLabel("STRATEGY EVENTS  /  PAPER ONLY")
+        label.setObjectName("Muted")
+        label.setFont(mono_font(8))
+        heading.addWidget(label)
+        box.addLayout(heading)
+
+        self.log_table = QTableWidget(5, 4)
+        self.log_table.setHorizontalHeaderLabels(["TIME (UTC)", "ACTION", "CONTEXT", "OUTCOME"])
+        self.log_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.log_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.log_table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        self.log_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
+        self.log_table.verticalHeader().setVisible(False)
+        self.log_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.log_table.setSelectionMode(QAbstractItemView.NoSelection)
+        self.log_table.setAlternatingRowColors(True)
+        self.log_table.setMaximumHeight(188)
+
+        entries = [
+            ("15:20:14", "WAIT", "EMA band compressed; no clean edge", "NO TRADE"),
+            ("15:12:03", "SKIP LONG", "RSI below trigger; momentum neutral", "FILTERED"),
+            ("15:05:47", "WAIT", "Spread widened above paper threshold", "NO TRADE"),
+            ("14:58:32", "RISK CHECK", "Exposure remains below configured cap", "PASSED"),
+            ("14:47:18", "SESSION", "Demo market feed initialized", "READY"),
+        ]
+        for row, values in enumerate(entries):
+            for col, value in enumerate(values):
+                item = QTableWidgetItem(value)
+                item.setFont(mono_font(8))
+                if col == 1:
+                    item.setForeground(QColor(COLORS["violet"]))
+                elif col == 3:
+                    item.setForeground(QColor(COLORS["cyan"]))
+                self.log_table.setItem(row, col, item)
+        box.addWidget(self.log_table)
+        return panel
+
+    def _build_risk_console(self):
+        panel = QFrame()
+        panel.setObjectName("PanelAccent")
+        panel.setMinimumWidth(285)
+        panel.setMaximumWidth(380)
+        box = QVBoxLayout(panel)
+        box.setContentsMargins(16, 14, 16, 14)
+        box.setSpacing(12)
+
+        title = QLabel("RISK CONSOLE")
+        title.setObjectName("Eyebrow")
+        box.addWidget(title)
+
+        signal_panel = QFrame()
+        signal_panel.setObjectName("SignalPanel")
+        signal_box = QVBoxLayout(signal_panel)
+        signal_box.setContentsMargins(14, 12, 14, 12)
+        caption = QLabel("CURRENT STRATEGY STATE")
+        caption.setObjectName("Muted")
+        caption.setFont(ui_font(8, 650))
+        self.risk_signal = QLabel("WAIT")
+        self.risk_signal.setObjectName("Violet")
+        self.risk_signal.setFont(mono_font(26, 700))
+        self.signal_reason = QLabel("Waiting for a confirmed crossover")
+        self.signal_reason.setWordWrap(True)
+        self.signal_reason.setObjectName("Muted")
+        signal_box.addWidget(caption)
+        signal_box.addWidget(self.risk_signal)
+        signal_box.addWidget(self.signal_reason)
+        box.addWidget(signal_panel)
+
+        box.addWidget(self._separator())
+        self.equity_value = self._risk_row(box, "PAPER EQUITY", "10,000.00 USDT", "Cyan")
+        self.daily_value = self._risk_row(box, "DAILY P&L", "+0.00 USDT", "Positive")
+        self.drawdown_value = self._risk_row(box, "DRAWDOWN", "0.00%", "Muted")
+        self.exposure_value = self._risk_row(box, "OPEN EXPOSURE", "0.00 USDT", "Muted")
+
+        load_header = QHBoxLayout()
+        load_title = QLabel("RISK LOAD")
+        load_title.setObjectName("Muted")
+        self.risk_load_text = QLabel("12%")
+        self.risk_load_text.setObjectName("Violet")
+        self.risk_load_text.setFont(mono_font(10, 700))
+        load_header.addWidget(load_title)
+        load_header.addStretch()
+        load_header.addWidget(self.risk_load_text)
+        box.addLayout(load_header)
+        self.risk_bar = QProgressBar()
+        self.risk_bar.setRange(0, 100)
+        self.risk_bar.setValue(12)
+        box.addWidget(self.risk_bar)
+
+        breaker = QFrame()
+        breaker.setObjectName("CircuitBreaker")
+        breaker_box = QHBoxLayout(breaker)
+        breaker_box.setContentsMargins(10, 8, 10, 8)
+        breaker_title = QLabel("CIRCUIT BREAKER")
+        breaker_title.setObjectName("Muted")
+        self.breaker_state = QLabel("ARMED / SAFE")
+        self.breaker_state.setObjectName("Positive")
+        self.breaker_state.setFont(mono_font(9, 700))
+        breaker_box.addWidget(breaker_title)
+        breaker_box.addStretch()
+        breaker_box.addWidget(self.breaker_state)
+        box.addWidget(breaker)
+
+        guardrail_title = QLabel("GUARDRAILS")
+        guardrail_title.setObjectName("Eyebrow")
+        box.addWidget(guardrail_title)
+        self._risk_row(box, "RISK PER TRADE", "0.50%", "Cyan")
+        self._risk_row(box, "DAILY LOSS LIMIT", "2.00%", "Muted")
+        self._risk_row(box, "MAX DRAWDOWN", "10.00%", "Muted")
+        box.addStretch()
+
+        self.paper_button = QPushButton("OPEN PAPER TICKET")
+        self.paper_button.setObjectName("PrimaryButton")
+        self.paper_button.clicked.connect(self._show_paper_ticket)
+        box.addWidget(self.paper_button)
+
+        replay_button = QPushButton("REPLAY SESSION")
+        replay_button.clicked.connect(self._replay_session)
+        box.addWidget(replay_button)
+
+        self.halt_button = QPushButton("HALT DEMO FEED")
+        self.halt_button.setObjectName("DangerButton")
+        self.halt_button.clicked.connect(self._toggle_feed)
+        box.addWidget(self.halt_button)
+        return panel
+
+    def _risk_row(self, parent, title, value, value_object):
+        row = QHBoxLayout()
+        label = QLabel(title)
+        label.setObjectName("Muted")
+        label.setFont(ui_font(8, 600))
+        result = QLabel(value)
+        result.setObjectName(value_object)
+        result.setFont(mono_font(9, 650))
+        row.addWidget(label)
+        row.addStretch()
+        row.addWidget(result)
+        parent.addLayout(row)
+        return result
+
+    def _separator(self):
+        line = QFrame()
+        line.setFrameShape(QFrame.HLine)
+        line.setStyleSheet(f"color:{COLORS['line']};")
+        return line
+
+    # ---------- live demo state ----------
+    def _refresh_all(self):
+        analysis = self._analyze()
+        self._update_metrics(analysis)
+        self._render_chart()
+
+    def _tick_demo_feed(self):
+        if not self.feed_running:
+            return
+        last = float(self.data["close"].iloc[-1])
+        delta = float(self._rng.normal(0, 1.65))
+        close = max(1.0, last + delta)
+        open_ = last
+        spread = abs(float(self._rng.normal(1.35, 0.4)))
+        row = {
+            "date": datetime.now(timezone.utc).replace(tzinfo=None),
+            "open": open_,
+            "high": max(open_, close) + spread,
+            "low": min(open_, close) - spread,
+            "close": close,
+            "volume": int(self._rng.integers(700, 6800)),
+        }
+        self.data = pd.concat([self.data, pd.DataFrame([row])], ignore_index=True).tail(240)
+        self.data["MA20"] = self.data["close"].rolling(20).mean()
+        self.data["MA50"] = self.data["close"].rolling(50).mean()
+        self._refresh_all()
+
+    def _analyze(self):
+        close = self.data["close"]
+        current = float(close.iloc[-1])
+        previous = float(close.iloc[-2])
+        ma20 = float(close.rolling(20).mean().iloc[-1])
+        ma50 = float(close.rolling(50).mean().iloc[-1])
+        returns = close.pct_change().dropna().tail(30)
+        volatility = float(returns.std() * 100)
+
+        delta = close.diff().tail(15)
+        gain = delta.clip(lower=0).mean()
+        loss = -delta.clip(upper=0).mean()
+        rsi = 100 if loss == 0 and gain > 0 else 50 if loss == 0 else 100 - (100 / (1 + gain / loss))
+
+        if current > ma20 > ma50 and 48 < rsi < 68:
+            signal, score, reason = "LONG BIAS", 68, "Trend aligned; waiting for crossover confirmation"
+        elif current < ma20 < ma50 and 32 < rsi < 52:
+            signal, score, reason = "SHORT BIAS", 65, "Downtrend aligned; waiting for crossover confirmation"
+        else:
+            signal, score, reason = "WAIT", 41, "No validated entry; capital remains protected"
+
+        return {
+            "price": current,
+            "change": (current / previous - 1) * 100,
+            "signal": signal,
+            "score": score,
+            "reason": reason,
+            "volatility": volatility,
+        }
+
+    def _update_metrics(self, analysis):
+        self.price_value.setText(f"{analysis['price']:,.2f}")
+        self.change_value.setText(f"{analysis['change']:+.2f}%")
+        self.change_value.setObjectName("Positive" if analysis["change"] >= 0 else "Negative")
+        self.change_value.style().unpolish(self.change_value)
+        self.change_value.style().polish(self.change_value)
+        self.signal_value.setText(analysis["signal"])
+        self.confidence_value.setText(f"{analysis['score']} / 100")
+        vol_label = "ELEVATED" if analysis["volatility"] > 0.12 else "NORMAL"
+        self.volatility_value.setText(vol_label)
+        self.risk_signal.setText(analysis["signal"])
+        self.signal_reason.setText(analysis["reason"])
+
+    def _render_chart(self):
+        self.chart.removeAllSeries()
+        for axis in list(self.chart.axes()):
+            self.chart.removeAxis(axis)
+
+        frame = self.data.tail(90)
+        candles = QCandlestickSeries()
+        candles.setName("PAXG / USDT")
+        candles.setIncreasingColor(QColor(COLORS["cyan"]))
+        candles.setDecreasingColor(QColor(COLORS["red"]))
+        candles.setBodyWidth(0.72)
+
+        ma20 = QLineSeries()
+        ma20.setName("EMA 20")
+        ma20.setPen(QPen(QColor(COLORS["cyan"]), 1.4))
+        ma50 = QLineSeries()
+        ma50.setName("EMA 50")
+        ma50.setPen(QPen(QColor(COLORS["violet"]), 1.4))
+
+        for _, row in frame.iterrows():
+            timestamp = int(pd.Timestamp(row["date"]).timestamp() * 1000)
+            candle = QCandlestickSet(
+                float(row["open"]), float(row["high"]), float(row["low"]), float(row["close"]), timestamp
+            )
+            candles.append(candle)
+            if pd.notna(row.get("MA20")):
+                ma20.append(timestamp, float(row["MA20"]))
+            if pd.notna(row.get("MA50")):
+                ma50.append(timestamp, float(row["MA50"]))
+
+        self.chart.addSeries(candles)
+        self.chart.addSeries(ma20)
+        self.chart.addSeries(ma50)
+
+        axis_x = QDateTimeAxis()
+        axis_x.setFormat("HH:mm")
+        axis_x.setLabelsColor(QColor(COLORS["muted"]))
+        axis_x.setGridLineColor(QColor(COLORS["line"]))
+        axis_x.setLinePenColor(QColor(COLORS["line_bright"]))
+        axis_x.setLabelsFont(mono_font(7))
+        axis_x.setTickCount(7)
+        self.chart.addAxis(axis_x, Qt.AlignBottom)
+
+        axis_y = QValueAxis()
+        low = float(frame["low"].min())
+        high = float(frame["high"].max())
+        padding = max(2.0, (high - low) * 0.08)
+        axis_y.setRange(low - padding, high + padding)
+        axis_y.setLabelFormat("%.2f")
+        axis_y.setLabelsColor(QColor(COLORS["muted"]))
+        axis_y.setGridLineColor(QColor(COLORS["line"]))
+        axis_y.setLinePenColor(QColor(COLORS["line_bright"]))
+        axis_y.setLabelsFont(mono_font(7))
+        axis_y.setTickCount(7)
+        self.chart.addAxis(axis_y, Qt.AlignRight)
+
+        for series in (candles, ma20, ma50):
+            series.attachAxis(axis_x)
+            series.attachAxis(axis_y)
+
+    # ---------- actions ----------
+    def _update_clock(self):
+        self.clock_label.setText(datetime.now(timezone.utc).strftime("%d %b %Y  /  %H:%M:%S UTC"))
+
+    def _show_paper_ticket(self):
+        QMessageBox.information(
+            self,
+            "Paper order",
+            "Paper execution is intentionally protected.\n\n"
+            "No live order will be sent. Use the Backtest workspace to validate a strategy first.",
+        )
+
+    def _select_timeframe(self, selected):
+        for button in self.findChildren(QPushButton):
+            timeframe = button.property("timeframe")
+            if not timeframe:
+                continue
+            active = timeframe == selected
+            button.setChecked(active)
+            button.setStyleSheet(
+                f"color:{COLORS['cyan']}; border-color:{COLORS['cyan']};"
+                f"background:{COLORS['cyan_soft']};" if active else ""
+            )
+
+    def _replay_session(self):
+        self.data = self.generate_sample_data()
+        self._refresh_all()
+
+    def _toggle_feed(self):
+        self.feed_running = not self.feed_running
+        if self.feed_running:
+            self.halt_button.setText("HALT DEMO FEED")
+            self.feed_badge.setText("DEMO FEED  /  CONNECTED")
+            self.feed_badge.setObjectName("Positive")
+            self.breaker_state.setText("ARMED / SAFE")
+        else:
+            self.halt_button.setText("RESUME DEMO FEED")
+            self.feed_badge.setText("DEMO FEED  /  HALTED")
+            self.feed_badge.setObjectName("Negative")
+            self.breaker_state.setText("FEED HALTED")
+        for label in (self.feed_badge, self.breaker_state):
+            label.style().unpolish(label)
+            label.style().polish(label)
+
+    @staticmethod
+    def generate_sample_data():
+        rng = np.random.default_rng(42)
+        dates = pd.date_range(end=datetime.now(timezone.utc).replace(tzinfo=None), periods=240, freq="5min")
+        movement = rng.normal(0.08, 1.65, 240)
+        prices = 4680 + np.cumsum(movement)
+        opens = np.r_[prices[0], prices[:-1]]
+        wick = np.abs(rng.normal(1.25, 0.5, 240))
+        data = pd.DataFrame(
+            {
+                "date": dates,
+                "open": opens,
+                "high": np.maximum(opens, prices) + wick,
+                "low": np.minimum(opens, prices) - wick,
+                "close": prices,
+                "volume": rng.integers(700, 6800, 240),
+            }
+        )
+        data["MA20"] = data["close"].rolling(20).mean()
+        data["MA50"] = data["close"].rolling(50).mean()
+        return data

@@ -39,3 +39,4 @@ state/
 .hypothesis/
 .coverage
 htmlcov/
+artifacts/
