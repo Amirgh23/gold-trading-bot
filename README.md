@@ -73,3 +73,9 @@ Run all tests with `python -m pytest tests -q`.
 ## License
 
 Proprietary. See `LICENSE`.
+
+---
+
+## فارسی
+
+این مخزن شامل کد و مستندات پروژهٔ **gold-trading-bot** است. برای نصب، اجرا و جزئیات فنی، دستورهای بخش انگلیسی را دنبال کنید.
